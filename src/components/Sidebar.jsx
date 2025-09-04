@@ -1,11 +1,12 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, Home, Table, X, Pen } from 'lucide-react';
+import { Menu, Home, Table, X ,ShieldCheck} from 'lucide-react';
 
 const navItems = [
   { to: '/', label: 'Home', icon: Home },
-  { to: '/Settings', label: 'Settings', icon: Table },
-
+  { to: '/settings', label: 'Impostazioni', icon: Table },
+  { to: '/controllo-qualita', label: 'Controllo Qualita', icon: ShieldCheck },
+  
 ];
 
 const Sidebar = ({ open, setOpen }) => {
@@ -15,7 +16,7 @@ const Sidebar = ({ open, setOpen }) => {
       <button
         className="mb-6 flex justify-center items-center w-10 h-10 bg-gray-700 rounded text-white self-start"
         onClick={() => setOpen(!open)}
-        aria-label={open ? 'Close sidebar' : 'Open sidebar'}
+        aria-label={open ? 'Chiudi sidebar' : 'Apri sidebar'}
       >
         {open ? <X size={24} /> : <Menu size={24} />}
       </button>

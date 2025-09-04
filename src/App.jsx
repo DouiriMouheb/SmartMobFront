@@ -5,6 +5,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import MainLayout from './layouts/MainLayout';
 import Home from './pages/Home';
 import TablePage from './pages/TablePage';
+import ControlloQualita from './pages/ControlloQualita';
 
 
 const App = () => (
@@ -24,6 +25,7 @@ const App = () => (
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/settings" element={<TablePage />} />
+        <Route path="/controllo-qualita" element={<ControlloQualita />} />
       </Routes>
     </MainLayout>
   </Router>

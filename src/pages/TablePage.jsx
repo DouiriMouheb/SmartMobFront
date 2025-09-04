@@ -3,10 +3,10 @@ import { useDatabaseRecords } from '../hooks/useDatabaseRecords';
 
 
 const TablePage = () => {
-  const { records, loading, error, updateRecord } = useDatabaseRecords();
+  const { records, loading, error, updateRecord, refreshRecords } = useDatabaseRecords();
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-4">Settings</h1>
+      <h1 className="text-2xl font-bold mb-4">Impostazioni</h1>
       {loading && (
         <div className="flex justify-center items-center py-10">
           <svg className="animate-spin h-8 w-8 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -16,7 +16,7 @@ const TablePage = () => {
         </div>
       )}
       
-      <Table data={records} updateRecord={updateRecord} />
+      <Table data={records} updateRecord={updateRecord} refreshRecords={refreshRecords} />
     </div>
   );
 };

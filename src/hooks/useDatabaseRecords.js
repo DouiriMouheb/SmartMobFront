@@ -7,12 +7,21 @@ export function useDatabaseRecords() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
+  const fetchRecords = async () => {
     setLoading(true);
-    fetchDatabaseRecords()
-      .then(res => setRecords(res.data))
-      .catch(setError)
-      .finally(() => setLoading(false));
+    try {
+      const res = await fetchDatabaseRecords();
+      setRecords(res.data);
+      setError(null);
+    } catch (err) {
+      setError(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchRecords();
   }, []);
 
   const updateRecord = async (id, value) => {
@@ -20,22 +29,23 @@ export function useDatabaseRecords() {
     try {
       const res = await updateDatabaseRecord(id, value);
       if (res.success) {
-        showSuccess(res.message || 'Record updated successfully');
+        showSuccess(res.message || 'Record aggiornato con successo');
       } else {
-        showError(res.message || 'Failed to update record');
+        showError(res.message || 'Aggiornamento del record fallito');
       }
       // Refresh records after update
-      const refreshed = await fetchDatabaseRecords();
-      setRecords(refreshed.data);
+      await fetchRecords();
       return res;
     } catch (err) {
       setError(err);
-      showError(err.message || 'Error updating record');
+      showError(err.message || 'Errore nell\'aggiornamento del record');
       return { success: false };
     } finally {
       setLoading(false);
     }
   };
 
-  return { records, loading, error, updateRecord };
+  const refreshRecords = fetchRecords;
+
+  return { records, loading, error, updateRecord, refreshRecords };
 }

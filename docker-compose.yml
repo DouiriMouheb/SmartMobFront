@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  smartmob-frontend:
+    build: .
+    container_name: smartmob-frontend
+    ports:
+      - "3000:80"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:7052
+    restart: unless-stopped
+    networks:
+      - smartmob-network
+
+  # Uncomment when API is ready
+  # smartmob-api:
+  #   image: smartmob-api:latest
+  #   container_name: smartmob-api
+  #   ports:
+  #     - "7052:8080"
+  #   environment:
+  #     - ASPNETCORE_ENVIRONMENT=Production
+  #     - ASPNETCORE_URLS=http://+:8080
+  #   restart: unless-stopped
+  #   networks:
+  #     - smartmob-network
+
+networks:
+  smartmob-network:
+    driver: bridge

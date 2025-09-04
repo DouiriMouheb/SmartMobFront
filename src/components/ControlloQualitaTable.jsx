@@ -1,0 +1,541 @@
+import React, { useState, useMemo } from 'react';
+import { Search, ChevronLeft, ChevronRight, Plus, Edit, Trash2, Eye } from 'lucide-react';
+import Modal from './Modal';
+import { createControlloQualitaRecord, updateControlloQualitaRecord, deleteControlloQualitaRecord } from '../services/controlloQualitaService';
+import { showSuccess, showError } from '../services/toastService';
+
+const ControlloQualitaTable = ({ data, updateRecord, refreshRecords }) => {
+    const [modalOpen, setModalOpen] = useState(false);
+    const [selectedRow, setSelectedRow] = useState(null);
+    const [editMode, setEditMode] = useState(false);
+    const [createMode, setCreateMode] = useState(false);
+    const [form, setForm] = useState({ codArticolo: '', codLineaProd: '' });
+    const [saving, setSaving] = useState(false);
+    const [deleting, setDeleting] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [sortField, setSortField] = useState('');
+    const [sortDirection, setSortDirection] = useState('asc');
+    const [recordsPerPage, setRecordsPerPage] = useState(10);
+
+    // Filter and sort data
+    const filteredData = useMemo(() => {
+        let filtered = data || [];
+        
+        // Apply search filter
+        if (searchTerm.trim() && filtered.length > 0) {
+            filtered = filtered.filter(row => {
+                return (
+                    row.codArticolo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    row.codLineaProd?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    row.formattedDtAgg?.includes(searchTerm)
+                );
+            });
+        }
+        
+        // Apply sorting
+        if (sortField && filtered.length > 0) {
+            filtered = [...filtered].sort((a, b) => {
+                let aValue, bValue;
+                
+                switch (sortField) {
+                    case 'codArticolo':
+                        aValue = a.codArticolo?.toLowerCase() || '';
+                        bValue = b.codArticolo?.toLowerCase() || '';
+                        break;
+                    case 'codLineaProd':
+                        aValue = a.codLineaProd?.toLowerCase() || '';
+                        bValue = b.codLineaProd?.toLowerCase() || '';
+                        break;
+                    case 'dtAgg':
+                        aValue = new Date(a.dtAgg);
+                        bValue = new Date(b.dtAgg);
+                        break;
+                    default:
+                        return 0;
+                }
+                
+                if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+                if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+                return 0;
+            });
+        }
+        
+        return filtered;
+    }, [data, searchTerm, sortField, sortDirection]);
+
+    // Paginate filtered data
+    const paginatedData = useMemo(() => {
+        if (!filteredData || filteredData.length === 0) {
+            return [];
+        }
+        if (recordsPerPage === 'all') {
+            return filteredData;
+        }
+        const startIndex = (currentPage - 1) * recordsPerPage;
+        return filteredData.slice(startIndex, startIndex + recordsPerPage);
+    }, [filteredData, currentPage, recordsPerPage]);
+
+    const totalPages = recordsPerPage === 'all' ? 1 : Math.ceil((filteredData?.length || 0) / recordsPerPage);
+
+    // Handle search
+    const handleSearchChange = (value) => {
+        setSearchTerm(value);
+        setCurrentPage(1);
+    };
+
+    // Handle records per page change
+    const handleRecordsPerPageChange = (newRecordsPerPage) => {
+        setRecordsPerPage(newRecordsPerPage);
+        setCurrentPage(1);
+    };
+
+    // Handle sorting
+    const handleSort = (field) => {
+        if (sortField === field) {
+            setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortField(field);
+            setSortDirection('asc');
+        }
+        setCurrentPage(1);
+    };
+
+    // Sortable header component
+    const SortableHeader = ({ field, children, className = "" }) => (
+        <th 
+            className={`px-4 py-2 border-b-2 border-gray-300 cursor-pointer hover:bg-gray-50 ${className}`}
+            onClick={() => handleSort(field)}
+        >
+            <div className="flex items-center justify-center gap-1">
+                {children}
+                {sortField === field && (
+                    <span className="text-red-500">
+                        {sortDirection === 'asc' ? '↑' : '↓'}
+                    </span>
+                )}
+            </div>
+        </th>
+    );
+
+    // Modal handlers
+    const handleRowClick = (row) => {
+        setSelectedRow(row);
+        setForm({ 
+            codArticolo: row.codArticolo || '', 
+            codLineaProd: row.codLineaProd || ''
+        });
+        setEditMode(false);
+        setCreateMode(false);
+        setModalOpen(true);
+    };
+
+    const handleEditClick = () => {
+        setEditMode(true);
+        setCreateMode(false);
+    };
+
+    const handleCreateClick = () => {
+        setCreateMode(true);
+        setEditMode(false);
+        setSelectedRow(null);
+        setForm({ codArticolo: '', codLineaProd: '' });
+        setModalOpen(true);
+    };
+
+    const handleCloseModal = () => {
+        setModalOpen(false);
+        setEditMode(false);
+        setCreateMode(false);
+        setSelectedRow(null);
+        setForm({ codArticolo: '', codLineaProd: '' });
+    };
+
+    const handleSave = async () => {
+        setSaving(true);
+        try {
+            let res;
+            if (createMode) {
+                res = await createControlloQualitaRecord(form);
+            } else {
+                res = await updateControlloQualitaRecord(selectedRow.id, form);
+            }
+
+            if (res.success) {
+                showSuccess(res.message || (createMode ? 'Record creato' : 'Record aggiornato'));
+                handleCloseModal();
+                if (refreshRecords) await refreshRecords();
+            } else {
+                showError(res.message || 'Operazione fallita');
+            }
+        } catch (err) {
+            showError('Operazione fallita');
+        }
+        setSaving(false);
+    };
+
+    const handleDeleteClick = () => {
+        setShowDeleteConfirm(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        setDeleting(true);
+        try {
+            const res = await deleteControlloQualitaRecord(selectedRow.id);
+            if (res.success) {
+                showSuccess(res.message || 'Record eliminato');
+                handleCloseModal();
+                if (refreshRecords) await refreshRecords();
+            } else {
+                showError(res.message || 'Eliminazione fallita');
+            }
+        } catch (err) {
+            showError('Eliminazione fallita');
+        }
+        setDeleting(false);
+        setShowDeleteConfirm(false);
+    };
+
+    const handleCancelDelete = () => {
+        setShowDeleteConfirm(false);
+    };
+
+    const getModalFooter = () => {
+        if (createMode || editMode) {
+            const isFormValid = form.codArticolo.trim() !== '' && form.codLineaProd.trim() !== '';
+            
+            return (
+                <>
+                    <button 
+                        type="button" 
+                        className="px-3 py-1 bg-gray-300 rounded" 
+                        onClick={handleCloseModal}
+                        disabled={saving}
+                    >
+                        Annulla
+                    </button>
+                    <button
+                        type="button"
+                        className={`px-3 py-1 rounded flex items-center ${
+                            isFormValid 
+                                ? 'bg-red-500 text-white hover:bg-red-600' 
+                                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        }`}
+                        disabled={!isFormValid || saving}
+                        onClick={handleSave}
+                    >
+                        {saving ? (
+                            <svg className="animate-spin h-4 w-4 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+                            </svg>
+                        ) : null}
+                        Salva
+                    </button>
+                </>
+            );
+        }
+        
+        return (
+            <>
+                <button 
+                    type="button" 
+                    className="px-3 py-1 bg-gray-300 rounded" 
+                    onClick={handleCloseModal}
+                >
+                    Chiudi
+                </button>
+                <button
+                    type="button"
+                    className="px-3 py-1 bg-red-500 text-white rounded flex items-center"
+                    onClick={handleEditClick}
+                >
+                    <Edit size={16} className="mr-1" />
+                    Modifica
+                </button>
+                <button
+                    type="button"
+                    className="px-3 py-1 bg-red-600 text-white rounded flex items-center"
+                    onClick={handleDeleteClick}
+                >
+                    <Trash2 size={16} className="mr-1" />
+                    Elimina
+                </button>
+            </>
+        );
+    };
+
+    return (
+        <>
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                {/* Header with search and create button */}
+                <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+                    <div className="relative flex-1 max-w-md">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                        <input
+                            type="text"
+                            value={searchTerm}
+                            onChange={(e) => handleSearchChange(e.target.value)}
+                            placeholder="Cerca per codice articolo, linea produzione o data..."
+                            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                        />
+                    </div>
+                    <button
+                        onClick={handleCreateClick}
+                        className="ml-4 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 flex items-center gap-2"
+                    >
+                        <Plus size={20} />
+                        Nuovo Record
+                    </button>
+                </div>
+
+                {/* Table */}
+                <table className="w-full">
+                    <thead className="bg-gray-50">
+                        <tr>
+                            <SortableHeader field="codArticolo" className="text-center">
+                                Cod. Articolo
+                            </SortableHeader>
+                            <SortableHeader field="codLineaProd" className="text-center">
+                                Cod. Linea Prod
+                            </SortableHeader>
+                            <SortableHeader field="dtAgg" className="text-center">
+                                Data Aggiornamento
+                            </SortableHeader>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {paginatedData.length === 0 ? (
+                            <tr>
+                                <td colSpan="3" className="px-4 py-8 text-center text-gray-500">
+                                    {filteredData.length === 0 && data?.length > 0 
+                                        ? 'Nessun record trovato con i criteri di ricerca.' 
+                                        : 'Nessun record disponibile.'
+                                    }
+                                </td>
+                            </tr>
+                        ) : (
+                            paginatedData.map((row) => (
+                                <tr
+                                    key={row.id}
+                                    className="hover:bg-gray-50 cursor-pointer"
+                                    onClick={() => handleRowClick(row)}
+                                >
+                                    <td className="px-4 py-2 border-b text-center">
+                                        <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded-md text-sm font-medium">
+                                            {row.codArticolo}
+                                        </span>
+                                    </td>
+                                    <td className="px-4 py-2 border-b text-center">
+                                        <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded-md text-sm font-medium">
+                                            {row.codLineaProd}
+                                        </span>
+                                    </td>
+                                    <td className="px-4 py-2 border-b text-center">
+                                        {row.formattedDtAgg}
+                                    </td>
+                                </tr>
+                            ))
+                        )}
+                    </tbody>
+                </table>
+
+                {/* Pagination */}
+                {filteredData.length > 0 && (
+                    <div className="mt-4 flex items-center justify-between p-4">
+                        <div className="flex items-center gap-4">
+                            <div className="text-sm text-gray-600">
+                                {recordsPerPage === 'all' 
+                                    ? `Mostrando tutti i ${filteredData.length} record` 
+                                    : `Pagina ${currentPage} di ${totalPages} - Mostrando ${paginatedData.length} di ${filteredData.length} record`
+                                }
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className="text-sm text-gray-600">Record per pagina:</span>
+                                <select 
+                                    value={recordsPerPage} 
+                                    onChange={(e) => handleRecordsPerPageChange(e.target.value === 'all' ? 'all' : parseInt(e.target.value))}
+                                    className="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:border-red-500"
+                                >
+                                    <option value={10}>10</option>
+                                    <option value={20}>20</option>
+                                    <option value={50}>50</option>
+                                    <option value="all">Tutti</option>
+                                </select>
+                            </div>
+                        </div>
+                        {recordsPerPage !== 'all' && (
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => setCurrentPage(currentPage - 1)}
+                                    disabled={currentPage === 1}
+                                    className={`px-3 py-1 rounded flex items-center gap-1 ${
+                                        currentPage === 1 
+                                            ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
+                                            : 'bg-red-500 text-white hover:bg-red-600'
+                                    }`}
+                                >
+                                    <ChevronLeft size={16} />
+                                    Precedente
+                                </button>
+                                
+                                <div className="flex items-center gap-1">
+                                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                                        <button
+                                            key={page}
+                                            onClick={() => setCurrentPage(page)}
+                                            className={`px-3 py-1 rounded ${
+                                                currentPage === page 
+                                                    ? 'bg-red-500 text-white' 
+                                                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                            }`}
+                                        >
+                                            {page}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                <button
+                                    onClick={() => setCurrentPage(currentPage + 1)}
+                                    disabled={currentPage === totalPages}
+                                    className={`px-3 py-1 rounded flex items-center gap-1 ${
+                                        currentPage === totalPages 
+                                            ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
+                                            : 'bg-red-500 text-white hover:bg-red-600'
+                                    }`}
+                                >
+                                    Successiva
+                                    <ChevronRight size={16} />
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
+
+            {/* Main Modal */}
+            <Modal 
+                open={modalOpen} 
+                title={createMode ? "Nuovo Record" : (editMode ? "Modifica Record" : "Dettagli Record")}
+                footer={getModalFooter()}
+            >
+                {createMode && (
+                    <div className="flex flex-col gap-4">
+                        {/* Cod. Articolo */}
+                        <div>
+                            <label className="font-semibold block mb-1">Cod. Articolo: <span className="text-red-500">*</span></label>
+                            <input
+                                type="text"
+                                value={form.codArticolo}
+                                onChange={(e) => setForm(prev => ({ ...prev, codArticolo: e.target.value }))}
+                                className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                placeholder="Inserisci codice articolo"
+                            />
+                        </div>
+
+                        {/* Cod. Linea Prod */}
+                        <div>
+                            <label className="font-semibold block mb-1">Cod. Linea Prod: <span className="text-red-500">*</span></label>
+                            <input
+                                type="text"
+                                value={form.codLineaProd}
+                                onChange={(e) => setForm(prev => ({ ...prev, codLineaProd: e.target.value }))}
+                                className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                placeholder="Inserisci codice linea produzione"
+                            />
+                        </div>
+                    </div>
+                )}
+
+                {editMode && (
+                    <div className="flex flex-col gap-4">
+                        {/* Cod. Articolo */}
+                        <div>
+                            <label className="font-semibold block mb-1">Cod. Articolo: <span className="text-red-500">*</span></label>
+                            <input
+                                type="text"
+                                value={form.codArticolo}
+                                onChange={(e) => setForm(prev => ({ ...prev, codArticolo: e.target.value }))}
+                                className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                            />
+                        </div>
+
+                        {/* Cod. Linea Prod */}
+                        <div>
+                            <label className="font-semibold block mb-1">Cod. Linea Prod: <span className="text-red-500">*</span></label>
+                            <input
+                                type="text"
+                                value={form.codLineaProd}
+                                onChange={(e) => setForm(prev => ({ ...prev, codLineaProd: e.target.value }))}
+                                className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                            />
+                        </div>
+                    </div>
+                )}
+
+                {!createMode && !editMode && selectedRow && (
+                    <div className="flex flex-col gap-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="font-semibold block mb-1">Cod. Articolo:</label>
+                                <p className="p-2 bg-gray-50 rounded border">{selectedRow.codArticolo}</p>
+                            </div>
+                            <div>
+                                <label className="font-semibold block mb-1">Cod. Linea Prod:</label>
+                                <p className="p-2 bg-gray-50 rounded border">{selectedRow.codLineaProd}</p>
+                            </div>
+                            <div>
+                                <label className="font-semibold block mb-1">Data Inserimento:</label>
+                                <p className="p-2 bg-gray-50 rounded border">{selectedRow.formattedDtIns}</p>
+                            </div>
+                            <div>
+                                <label className="font-semibold block mb-1">Data Aggiornamento:</label>
+                                <p className="p-2 bg-gray-50 rounded border">{selectedRow.formattedDtAgg}</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </Modal>
+
+            {/* Delete Confirmation Modal */}
+            <Modal 
+                open={showDeleteConfirm} 
+                title="Conferma Eliminazione"
+                footer={
+                    <>
+                        <button 
+                            type="button" 
+                            className="px-3 py-1 bg-gray-300 rounded" 
+                            onClick={handleCancelDelete}
+                            disabled={deleting}
+                        >
+                            Annulla
+                        </button>
+                        <button
+                            type="button"
+                            className="px-3 py-1 bg-red-500 text-white rounded flex items-center"
+                            disabled={deleting}
+                            onClick={handleConfirmDelete}
+                        >
+                            {deleting ? (
+                                <svg className="animate-spin h-4 w-4 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+                                </svg>
+                            ) : <Trash2 size={16} className="mr-1" />}
+                            Elimina
+                        </button>
+                    </>
+                }
+            >
+                <div className="text-center py-4">
+                    <p className="text-lg mb-2">Sei sicuro di voler eliminare questo record?</p>
+                    <p className="text-gray-600">Questa azione non può essere annullata.</p>
+                </div>
+            </Modal>
+        </>
+    );
+};
+
+export default ControlloQualitaTable;
