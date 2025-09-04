@@ -8,62 +8,87 @@ This is the frontend application for SmartMob built with React, Vite, and Tailwi
 - Docker Desktop installed
 - Git installed
 
-### Local Development
+### Deployment Steps
 ```bash
-# Clone the repository
+# 1. Clone the frontend repository
 git clone https://github.com/DouiriMouheb/SmartMobFront.git
 cd SmartMobFront
 
-# Copy environment file
+# 2. Copy environment file and configure
 cp .env.example .env
 
-# Build and run with Docker Compose
-docker-compose up --build
+# 3. Build and run frontend
+docker-compose up --build -d
 ```
 
 ### Access the Application
 - Frontend: http://localhost:3000
-- Make sure your API is running on http://localhost:7052
+- Make sure your API is running on: http://localhost:5000
 
 ## 🐳 Docker Commands
 
-### Using Docker Compose (Recommended)
+### Frontend Deployment
 ```bash
-# Build and start services
+# Build and start frontend
 docker-compose up --build
 
 # Run in background
 docker-compose up -d --build
 
-# Stop services
+# Stop frontend
 docker-compose down
 
 # View logs
 docker-compose logs -f smartmob-frontend
 ```
 
-### Using Docker directly
+### Alternative: Direct Docker
 ```bash
-# Build the image
+# Build frontend image
 docker build -t smartmob-frontend .
 
-# Run the container
-docker run -p 3000:80 -e VITE_API_BASE_URL=http://localhost:7052 smartmob-frontend
+# Run frontend container
+docker run -p 3000:80 -e VITE_API_BASE_URL=http://localhost:5000 smartmob-frontend
 ```
 
 ## 🔧 Configuration
 
 ### Environment Variables
 Create a `.env` file from `.env.example` and configure:
-- `VITE_API_BASE_URL`: URL of your backend API
+- `VITE_API_BASE_URL`: URL of your backend API (default: http://localhost:5000)
 
-### API Configuration
-Make sure your backend API:
-- Is running on the configured URL (default: http://localhost:7052)
-- Has CORS enabled for http://localhost:3000
-- Has the following endpoints available:
+### API Requirements
+Your backend API should:
+- Be running separately on port 5000 (using its own Docker setup)
+- Have CORS enabled for http://localhost:3000
+- Have the following endpoints:
   - `/api/DatabaseRecords` (for Settings page)
   - `/api/ControlloQualita` (for Quality Control page)
+
+## 📋 Complete Deployment Workflow
+
+### On New Desktop:
+
+1. **Deploy API First**:
+   ```bash
+   # In SmartMob API folder
+   cd SmartMob
+   docker-compose up --build -d
+   # API will be available on http://localhost:5000
+   ```
+
+2. **Deploy Frontend**:
+   ```bash
+   # In SmartMobFront folder
+   cd SmartMobFront
+   cp .env.example .env
+   docker-compose up --build -d
+   # Frontend will be available on http://localhost:3000
+   ```
+
+3. **Access Application**:
+   - Frontend: http://localhost:3000
+   - API: http://localhost:5000
 
 ## 📋 Features
 
