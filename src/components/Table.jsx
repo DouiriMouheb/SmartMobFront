@@ -127,31 +127,21 @@ const Table = ({ data, updateRecord, refreshRecords }) => {
     };
 
     // Sortable header component
-    const SortableHeader = ({ field, children, className = "" }) => {
-        const isActive = sortField === field;
-        const direction = isActive ? sortDirection : null;
-        
-        return (
-            <th 
-                className={`px-4 py-2 border-b cursor-pointer hover:bg-gray-200 transition-colors ${className}`}
-                onClick={() => handleSort(field)}
-            >
-                <div className="flex items-center justify-center gap-1">
-                    <span>{children}</span>
-                    <div className="flex flex-col">
-                        <ChevronUp 
-                            size={12} 
-                            className={`${isActive && direction === 'asc' ? 'text-red-500' : 'text-gray-300'}`}
-                        />
-                        <ChevronDown 
-                            size={12} 
-                            className={`${isActive && direction === 'desc' ? 'text-red-500' : 'text-gray-300'} -mt-1`}
-                        />
-                    </div>
-                </div>
-            </th>
-        );
-    };
+    const SortableHeader = ({ field, children, className = "" }) => (
+        <th 
+            className={`px-4 py-2 border-b-2 border-gray-300 cursor-pointer hover:bg-gray-50 ${className}`}
+            onClick={() => handleSort(field)}
+        >
+            <div className="flex items-center justify-center gap-1">
+                {children}
+                {sortField === field && (
+                    <span className="text-red-500">
+                        {sortDirection === 'asc' ? '↑' : '↓'}
+                    </span>
+                )}
+            </div>
+        </th>
+    );
 
     const handleRowClick = (row) => {
         setSelectedRow(row);
@@ -216,6 +206,16 @@ const Table = ({ data, updateRecord, refreshRecords }) => {
         return form.descrizione.trim() !== '' && 
                form.valore.trim() !== '' && 
                form.codLineaProd.trim() !== '' && 
+               form.codLineaProd.trim().length <= 18 &&
+               form.tipologia !== '' && 
+               form.tipologia !== 0;
+    };
+
+    const isEditFormValid = () => {
+        return form.descrizione.trim() !== '' && 
+               form.valore.trim() !== '' && 
+               form.codLineaProd.trim() !== '' && 
+               form.codLineaProd.trim().length <= 18 &&
                form.tipologia !== '' && 
                form.tipologia !== 0;
     };
@@ -310,8 +310,12 @@ const Table = ({ data, updateRecord, refreshRecords }) => {
                 </button>
                 <button
                     type="button"
-                    className="px-3 py-1 bg-blue-500 text-white rounded flex items-center justify-center"
-                    disabled={saving}
+                    className={`px-3 py-1 rounded flex items-center justify-center ${
+                        isEditFormValid() && !saving 
+                            ? 'bg-blue-500 text-white hover:bg-blue-600' 
+                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    }`}
+                    disabled={!isEditFormValid() || saving}
                     onClick={async () => {
                         setSaving(true);
                         try {
@@ -337,47 +341,39 @@ const Table = ({ data, updateRecord, refreshRecords }) => {
 
     return (
         <>
-            <div className="mb-4 flex justify-between items-center">
-                <h2 className="text-xl font-semibold">Records</h2>
-                <button
-                    type="button"
-                    className="px-4 py-2 bg-red-800 text-white rounded flex items-center gap-2 hover:bg-red-600"
-                    onClick={handleCreateClick}
-                >
-                    <Plus size={16} />
-                    Nuovo Record
-                </button>
-            </div>
-
-            {/* Search Bar */}
-            <div className="mb-4 relative">
-                <div className="relative">
-                    <Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                    <input
-                        type="text"
-                        placeholder="Cerca per descrizione, codice linea, valore, data o tipologia..."
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        value={searchTerm}
-                        onChange={(e) => handleSearchChange(e.target.value)}
-                    />
-                </div>
-                {searchTerm && (
-                    <div className="mt-2 text-sm text-gray-600">
-                        Trovati {filteredData.length} record{filteredData.length !== 1 ? 's' : ''} di {data.length}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                {/* Header with search and create button */}
+                <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+                    <div className="relative flex-1 max-w-md">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                        <input
+                            type="text"
+                            value={searchTerm}
+                            onChange={(e) => handleSearchChange(e.target.value)}
+                            placeholder="Cerca per descrizione, codice linea, valore, data o tipologia..."
+                            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                        />
                     </div>
-                )}
-            </div>
-            
-            <table className="min-w-full border-collapse border border-gray-300">
-                <thead>
-                    <tr className="bg-gray-100">
-                        <SortableHeader field="description" className="text-left">
-                            Descrizione
-                        </SortableHeader>
-                        <SortableHeader field="codLineaProd" className="text-center">
-                            Cod. Linea Prod
-                        </SortableHeader>
-                        <SortableHeader field="tipologia" className="text-center">
+                    <button
+                        onClick={handleCreateClick}
+                        className="ml-4 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 flex items-center gap-2"
+                    >
+                        <Plus size={20} />
+                        Nuovo Record
+                    </button>
+                </div>
+
+                {/* Table */}
+                <table className="w-full">
+                    <thead className="bg-gray-400">
+                        <tr>
+                            <SortableHeader field="description" className="text-left">
+                                Descrizione
+                            </SortableHeader>
+                            <SortableHeader field="codLineaProd" className="text-center">
+                                Cod. Linea Prod
+                            </SortableHeader>
+                            <SortableHeader field="tipologia" className="text-center">
                             Tipologia
                         </SortableHeader>
                         <SortableHeader field="date" className="text-center">
@@ -413,11 +409,11 @@ const Table = ({ data, updateRecord, refreshRecords }) => {
                             >
                                 <td className="px-4 py-2 border-b font-bold">{row.description}</td>
                                 <td className="px-4 py-2 border-b text-center">
-                                    <span className="bg-gray-600 text-white  px-2 py-1 rounded-md text-sm font-medium">
+                                    <span className="bg-gray-600 text-white px-2 py-1 rounded-md text-sm font-medium">
                                         {row.codLineaProd}
                                     </span>
                                 </td>
-                                <td className="px-4 py-2 border-b text-center">
+                                <td className="px-4 py-2 border-b text-left">
                                     {tipologie.find(t => t.idTipologia === row.tipologia)?.desSignificato || row.tipologia}
                                 </td>
                                 <td className="px-4 py-2 border-b text-center">
@@ -433,7 +429,7 @@ const Table = ({ data, updateRecord, refreshRecords }) => {
 
             {/* Pagination */}
             {filteredData.length > 0 && (
-                <div className="mt-4 flex items-center justify-between">
+                <div className="mt-4 flex items-center justify-between p-4">
                     <div className="flex items-center gap-4">
                         <div className="text-sm text-gray-600">
                             {recordsPerPage === 'all' 
@@ -502,6 +498,7 @@ const Table = ({ data, updateRecord, refreshRecords }) => {
                     )}
                 </div>
             )}
+        </div>
 
             <Modal 
                 open={modalOpen} 
@@ -538,12 +535,21 @@ const Table = ({ data, updateRecord, refreshRecords }) => {
                         <div>
                             <label className="font-semibold block mb-1">Cod. Linea Prod: <span className="text-red-500">*</span></label>
                             <input
-                                className="border px-2 py-1 rounded w-full"
+                                className={`border px-2 py-1 rounded w-full ${
+                                    form.codLineaProd.length > 18 ? 'border-red-500' : 'border-gray-300'
+                                }`}
                                 value={form.codLineaProd}
                                 onChange={e => setForm(f => ({ ...f, codLineaProd: e.target.value }))}
                                 required
                                 placeholder="Inserisci codice linea prodotto"
+                                maxLength={18}
                             />
+                            <div className="text-xs text-gray-500 mt-1">
+                                {form.codLineaProd.length}/18 caratteri
+                                {form.codLineaProd.length > 18 && (
+                                    <span className="text-red-500 ml-2">Massimo 18 caratteri</span>
+                                )}
+                            </div>
                         </div>
                         
                         {/* Tipologia */}
@@ -604,11 +610,20 @@ const Table = ({ data, updateRecord, refreshRecords }) => {
                             <div className="flex flex-col">
                                 <label className="font-semibold block mb-1">Cod. Linea:</label>
                                 <input
-                                    className="border px-2 py-1 rounded text-sm"
+                                    className={`border px-2 py-1 rounded text-sm ${
+                                        form.codLineaProd.length > 18 ? 'border-red-500' : 'border-gray-300'
+                                    }`}
                                     value={form.codLineaProd}
                                     onChange={e => setForm(f => ({ ...f, codLineaProd: e.target.value }))}
                                     required
+                                    maxLength={18}
                                 />
+                                <div className="text-xs text-gray-500 mt-1">
+                                    {form.codLineaProd.length}/18 caratteri
+                                    {form.codLineaProd.length > 18 && (
+                                        <span className="text-red-500 ml-2">Massimo 18 caratteri</span>
+                                    )}
+                                </div>
                             </div>
                             <div><span className="font-semibold">Data:</span> {formatDate(selectedRow.dateAdded)}</div>
                         </div>

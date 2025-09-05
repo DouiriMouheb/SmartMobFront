@@ -203,7 +203,10 @@ const ControlloQualitaTable = ({ data, updateRecord, refreshRecords }) => {
 
     const getModalFooter = () => {
         if (createMode || editMode) {
-            const isFormValid = form.codArticolo.trim() !== '' && form.codLineaProd.trim() !== '';
+            const isFormValid = form.codArticolo.trim() !== '' && 
+                               form.codArticolo.trim().length <= 58 &&
+                               form.codLineaProd.trim() !== '' && 
+                               form.codLineaProd.trim().length <= 18;
             
             return (
                 <>
@@ -292,7 +295,7 @@ const ControlloQualitaTable = ({ data, updateRecord, refreshRecords }) => {
 
                 {/* Table */}
                 <table className="w-full">
-                    <thead className="bg-gray-50">
+                    <thead className="bg-gray-400">
                         <tr>
                             <SortableHeader field="codArticolo" className="text-center">
                                 Cod. Articolo
@@ -323,18 +326,21 @@ const ControlloQualitaTable = ({ data, updateRecord, refreshRecords }) => {
                                     onClick={() => handleRowClick(row)}
                                 >
                                     <td className="px-4 py-2 border-b text-center">
-                                        <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded-md text-sm font-medium">
+                                        <span className="bg-gray-600 text-white px-2 py-1 rounded-md text-sm font-medium">
                                             {row.codArticolo}
                                         </span>
                                     </td>
                                     <td className="px-4 py-2 border-b text-center">
-                                        <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded-md text-sm font-medium">
+                                        <span className="bg-gray-600 text-white px-2 py-1 rounded-md text-sm font-medium">
                                             {row.codLineaProd}
                                         </span>
                                     </td>
-                                    <td className="px-4 py-2 border-b text-center">
+                                 
+                                      <td className="px-4 py-2 border-b text-center">
+                                    <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded-md text-sm font-medium">
                                         {row.formattedDtAgg}
-                                    </td>
+                                    </span>
+                                </td>
                                 </tr>
                             ))
                         )}
@@ -429,9 +435,18 @@ const ControlloQualitaTable = ({ data, updateRecord, refreshRecords }) => {
                                 type="text"
                                 value={form.codArticolo}
                                 onChange={(e) => setForm(prev => ({ ...prev, codArticolo: e.target.value }))}
-                                className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                className={`w-full p-2 border rounded focus:ring-2 focus:ring-red-500 focus:border-transparent ${
+                                    form.codArticolo.length > 58 ? 'border-red-500' : 'border-gray-300'
+                                }`}
                                 placeholder="Inserisci codice articolo"
+                                maxLength={58}
                             />
+                            <div className="text-xs text-gray-500 mt-1">
+                                {form.codArticolo.length}/58 caratteri
+                                {form.codArticolo.length > 58 && (
+                                    <span className="text-red-500 ml-2">Massimo 58 caratteri</span>
+                                )}
+                            </div>
                         </div>
 
                         {/* Cod. Linea Prod */}
@@ -441,9 +456,18 @@ const ControlloQualitaTable = ({ data, updateRecord, refreshRecords }) => {
                                 type="text"
                                 value={form.codLineaProd}
                                 onChange={(e) => setForm(prev => ({ ...prev, codLineaProd: e.target.value }))}
-                                className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                className={`w-full p-2 border rounded focus:ring-2 focus:ring-red-500 focus:border-transparent ${
+                                    form.codLineaProd.length > 18 ? 'border-red-500' : 'border-gray-300'
+                                }`}
                                 placeholder="Inserisci codice linea produzione"
+                                maxLength={18}
                             />
+                            <div className="text-xs text-gray-500 mt-1">
+                                {form.codLineaProd.length}/18 caratteri
+                                {form.codLineaProd.length > 18 && (
+                                    <span className="text-red-500 ml-2">Massimo 18 caratteri</span>
+                                )}
+                            </div>
                         </div>
                     </div>
                 )}
@@ -457,8 +481,17 @@ const ControlloQualitaTable = ({ data, updateRecord, refreshRecords }) => {
                                 type="text"
                                 value={form.codArticolo}
                                 onChange={(e) => setForm(prev => ({ ...prev, codArticolo: e.target.value }))}
-                                className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                className={`w-full p-2 border rounded focus:ring-2 focus:ring-red-500 focus:border-transparent ${
+                                    form.codArticolo.length > 58 ? 'border-red-500' : 'border-gray-300'
+                                }`}
+                                maxLength={58}
                             />
+                            <div className="text-xs text-gray-500 mt-1">
+                                {form.codArticolo.length}/58 caratteri
+                                {form.codArticolo.length > 58 && (
+                                    <span className="text-red-500 ml-2">Massimo 58 caratteri</span>
+                                )}
+                            </div>
                         </div>
 
                         {/* Cod. Linea Prod */}
@@ -468,8 +501,17 @@ const ControlloQualitaTable = ({ data, updateRecord, refreshRecords }) => {
                                 type="text"
                                 value={form.codLineaProd}
                                 onChange={(e) => setForm(prev => ({ ...prev, codLineaProd: e.target.value }))}
-                                className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                className={`w-full p-2 border rounded focus:ring-2 focus:ring-red-500 focus:border-transparent ${
+                                    form.codLineaProd.length > 18 ? 'border-red-500' : 'border-gray-300'
+                                }`}
+                                maxLength={18}
                             />
+                            <div className="text-xs text-gray-500 mt-1">
+                                {form.codLineaProd.length}/18 caratteri
+                                {form.codLineaProd.length > 18 && (
+                                    <span className="text-red-500 ml-2">Massimo 18 caratteri</span>
+                                )}
+                            </div>
                         </div>
                     </div>
                 )}
