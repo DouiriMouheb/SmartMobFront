@@ -38,11 +38,13 @@ export const updateControlloQualitaRecord = async (id, updatedRecord) => {
       body: JSON.stringify(updatedRecord),
     });
 
+    const data = await response.json();
+
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      // If API returned JSON error response, use its message
+      return { success: false, message: data.message || `HTTP error! status: ${response.status}` };
     }
 
-    const data = await response.json();
     return { success: true, data, message: 'Record aggiornato con successo' };
   } catch (error) {
     console.error('Error updating controllo qualità record:', error);
@@ -60,11 +62,13 @@ export const createControlloQualitaRecord = async (newRecord) => {
       body: JSON.stringify(newRecord),
     });
 
+    const data = await response.json();
+
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      // If API returned JSON error response, use its message
+      return { success: false, message: data.message || `HTTP error! status: ${response.status}` };
     }
 
-    const data = await response.json();
     return { success: true, data, message: 'Record creato con successo' };
   } catch (error) {
     console.error('Error creating controllo qualità record:', error);
