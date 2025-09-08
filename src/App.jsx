@@ -6,6 +6,7 @@ import MainLayout from './layouts/MainLayout';
 import Home from './pages/Home';
 import TablePage from './pages/TablePage';
 import ControlloQualita from './pages/ControlloQualita';
+import DispositiviMultimediali from './pages/DispositiviMultimediali';
 
 
 const App = () => (
@@ -26,6 +27,7 @@ const App = () => (
         <Route path="/" element={<Home />} />
         <Route path="/settings" element={<TablePage />} />
         <Route path="/controllo-qualita" element={<ControlloQualita />} />
+        <Route path="/dispositivi-multimediali" element={<DispositiviMultimediali />} />
       </Routes>
     </MainLayout>
   </Router>

@@ -542,12 +542,12 @@ const Table = ({ data, updateRecord, refreshRecords }) => {
                                 onChange={e => setForm(f => ({ ...f, codLineaProd: e.target.value }))}
                                 required
                                 placeholder="Inserisci codice linea prodotto"
-                                maxLength={18}
+                                maxLength={50}
                             />
                             <div className="text-xs text-gray-500 mt-1">
-                                {form.codLineaProd.length}/18 caratteri
-                                {form.codLineaProd.length > 18 && (
-                                    <span className="text-red-500 ml-2">Massimo 18 caratteri</span>
+                                {form.codLineaProd.length}/50 caratteri
+                                {form.codLineaProd.length > 50 && (
+                                    <span className="text-red-500 ml-2">Massimo 50 caratteri</span>
                                 )}
                             </div>
                         </div>
@@ -616,12 +616,12 @@ const Table = ({ data, updateRecord, refreshRecords }) => {
                                     value={form.codLineaProd}
                                     onChange={e => setForm(f => ({ ...f, codLineaProd: e.target.value }))}
                                     required
-                                    maxLength={18}
+                                    maxLength={50}
                                 />
                                 <div className="text-xs text-gray-500 mt-1">
-                                    {form.codLineaProd.length}/18 caratteri
-                                    {form.codLineaProd.length > 18 && (
-                                        <span className="text-red-500 ml-2">Massimo 18 caratteri</span>
+                                    {form.codLineaProd.length}/50 caratteri
+                                    {form.codLineaProd.length > 50 && (
+                                        <span className="text-red-500 ml-2">Massimo 50 caratteri</span>
                                     )}
                                 </div>
                             </div>

@@ -1,11 +1,12 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, Home, Table, X ,ShieldCheck} from 'lucide-react';
+import { Menu, Home, Table, X ,ShieldCheck, Monitor} from 'lucide-react';
 
 const navItems = [
   { to: '/', label: 'Home', icon: Home },
   { to: '/settings', label: 'Impostazioni', icon: Table },
   { to: '/controllo-qualita', label: 'Controllo Qualita', icon: ShieldCheck },
+  { to: '/dispositivi-multimediali', label: 'Dispositivi Multimediali', icon: Monitor },
   
 ];
 

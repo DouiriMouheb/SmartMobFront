@@ -1,15 +1,21 @@
 import React, { useState, useMemo } from 'react';
 import { Search, ChevronLeft, ChevronRight, Plus, Edit, Trash2, Eye } from 'lucide-react';
 import Modal from './Modal';
-import { createControlloQualitaRecord, updateControlloQualitaRecord, deleteControlloQualitaRecord } from '../services/controlloQualitaService';
+import { createDispositiviMultimedialiRecord, updateDispositiviMultimedialiRecord, deleteDispositiviMultimedialiRecord } from '../services/dispositiviMultimedialiService';
 import { showSuccess, showError } from '../services/toastService';
 
-const ControlloQualitaTable = ({ data, updateRecord, refreshRecords }) => {
+const DispositiviMultimedialiTable = ({ data, updateRecord, refreshRecords }) => {
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedRow, setSelectedRow] = useState(null);
     const [editMode, setEditMode] = useState(false);
     const [createMode, setCreateMode] = useState(false);
-    const [form, setForm] = useState({ codArticolo: '', codLineaProd: '' });
+    const [form, setForm] = useState({ 
+        codLineaProd: '', 
+        codPostazione: '', 
+        serialeDispositivo: '', 
+        pathStorageDispositivo: '', 
+        pathDestinazioneSpostamento: '' 
+    });
     const [saving, setSaving] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -19,6 +25,7 @@ const ControlloQualitaTable = ({ data, updateRecord, refreshRecords }) => {
     const [sortDirection, setSortDirection] = useState('asc');
     const [recordsPerPage, setRecordsPerPage] = useState(10);
 
+    // Utility function to format dates as day/month/year hour:minute:second
     const formatDate = (dateString) => {
         if (!dateString) return '';
         const date = new Date(dateString);
@@ -38,12 +45,17 @@ const ControlloQualitaTable = ({ data, updateRecord, refreshRecords }) => {
         // Apply search filter
         if (searchTerm.trim() && filtered.length > 0) {
             filtered = filtered.filter(row => {
-                const formattedDate = formatDate(row.dtAgg);
+                const formattedDtIns = formatDate(row.dtIns);
+                const formattedDtAgg = formatDate(row.dtAgg);
                 
                 return (
-                    row.codArticolo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                     row.codLineaProd?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    formattedDate.includes(searchTerm)
+                    row.codPostazione?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    row.serialeDispositivo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    row.pathStorageDispositivo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    row.pathDestinazioneSpostamento?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    formattedDtIns.includes(searchTerm) ||
+                    formattedDtAgg.includes(searchTerm)
                 );
             });
         }
@@ -54,13 +66,21 @@ const ControlloQualitaTable = ({ data, updateRecord, refreshRecords }) => {
                 let aValue, bValue;
                 
                 switch (sortField) {
-                    case 'codArticolo':
-                        aValue = a.codArticolo?.toLowerCase() || '';
-                        bValue = b.codArticolo?.toLowerCase() || '';
-                        break;
                     case 'codLineaProd':
                         aValue = a.codLineaProd?.toLowerCase() || '';
                         bValue = b.codLineaProd?.toLowerCase() || '';
+                        break;
+                    case 'codPostazione':
+                        aValue = a.codPostazione?.toLowerCase() || '';
+                        bValue = b.codPostazione?.toLowerCase() || '';
+                        break;
+                    case 'serialeDispositivo':
+                        aValue = a.serialeDispositivo?.toLowerCase() || '';
+                        bValue = b.serialeDispositivo?.toLowerCase() || '';
+                        break;
+                    case 'dtIns':
+                        aValue = new Date(a.dtIns);
+                        bValue = new Date(b.dtIns);
                         break;
                     case 'dtAgg':
                         aValue = new Date(a.dtAgg);
@@ -137,8 +157,11 @@ const ControlloQualitaTable = ({ data, updateRecord, refreshRecords }) => {
     const handleRowClick = (row) => {
         setSelectedRow(row);
         setForm({ 
-            codArticolo: row.codArticolo || '', 
-            codLineaProd: row.codLineaProd || ''
+            codLineaProd: row.codLineaProd || '', 
+            codPostazione: row.codPostazione || '',
+            serialeDispositivo: row.serialeDispositivo || '',
+            pathStorageDispositivo: row.pathStorageDispositivo || '',
+            pathDestinazioneSpostamento: row.pathDestinazioneSpostamento || ''
         });
         setEditMode(false);
         setCreateMode(false);
@@ -154,7 +177,13 @@ const ControlloQualitaTable = ({ data, updateRecord, refreshRecords }) => {
         setCreateMode(true);
         setEditMode(false);
         setSelectedRow(null);
-        setForm({ codArticolo: '', codLineaProd: '' });
+        setForm({ 
+            codLineaProd: '', 
+            codPostazione: '', 
+            serialeDispositivo: '', 
+            pathStorageDispositivo: '', 
+            pathDestinazioneSpostamento: '' 
+        });
         setModalOpen(true);
     };
 
@@ -163,7 +192,13 @@ const ControlloQualitaTable = ({ data, updateRecord, refreshRecords }) => {
         setEditMode(false);
         setCreateMode(false);
         setSelectedRow(null);
-        setForm({ codArticolo: '', codLineaProd: '' });
+        setForm({ 
+            codLineaProd: '', 
+            codPostazione: '', 
+            serialeDispositivo: '', 
+            pathStorageDispositivo: '', 
+            pathDestinazioneSpostamento: '' 
+        });
     };
 
     const handleSave = async () => {
@@ -171,9 +206,9 @@ const ControlloQualitaTable = ({ data, updateRecord, refreshRecords }) => {
         try {
             let res;
             if (createMode) {
-                res = await createControlloQualitaRecord(form);
+                res = await createDispositiviMultimedialiRecord(form);
             } else {
-                res = await updateControlloQualitaRecord(selectedRow.id, form);
+                res = await updateDispositiviMultimedialiRecord(selectedRow.id, form);
             }
 
             if (res.success) {
@@ -196,7 +231,7 @@ const ControlloQualitaTable = ({ data, updateRecord, refreshRecords }) => {
     const handleConfirmDelete = async () => {
         setDeleting(true);
         try {
-            const res = await deleteControlloQualitaRecord(selectedRow.id);
+            const res = await deleteDispositiviMultimedialiRecord(selectedRow.id);
             if (res.success) {
                 showSuccess(res.message || 'Record eliminato');
                 handleCloseModal();
@@ -217,10 +252,16 @@ const ControlloQualitaTable = ({ data, updateRecord, refreshRecords }) => {
 
     const getModalFooter = () => {
         if (createMode || editMode) {
-            const isFormValid = form.codArticolo.trim() !== '' && 
-                               form.codArticolo.trim().length <= 58 &&
-                               form.codLineaProd.trim() !== '' && 
-                               form.codLineaProd.trim().length <= 18;
+            const isFormValid = form.codLineaProd.trim() !== '' && 
+                               form.codLineaProd.trim().length <= 50 &&
+                               form.codPostazione.trim() !== '' && 
+                               form.codPostazione.trim().length <= 50 &&
+                               form.serialeDispositivo.trim() !== '' && 
+                               form.serialeDispositivo.trim().length <= 100 &&
+                               form.pathStorageDispositivo.trim() !== '' && 
+                               form.pathStorageDispositivo.trim().length <= 500 &&
+                               form.pathDestinazioneSpostamento.trim() !== '' && 
+                               form.pathDestinazioneSpostamento.trim().length <= 500;
             
             return (
                 <>
@@ -294,7 +335,7 @@ const ControlloQualitaTable = ({ data, updateRecord, refreshRecords }) => {
                             type="text"
                             value={searchTerm}
                             onChange={(e) => handleSearchChange(e.target.value)}
-                            placeholder="Cerca per codice articolo, linea produzione o data..."
+                            placeholder="Cerca per codice, seriale, path o data..."
                             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                         />
                     </div>
@@ -311,11 +352,17 @@ const ControlloQualitaTable = ({ data, updateRecord, refreshRecords }) => {
                 <table className="w-full">
                     <thead className="bg-gray-400">
                         <tr>
-                            <SortableHeader field="codArticolo" className="text-center">
-                                Cod. Articolo
-                            </SortableHeader>
                             <SortableHeader field="codLineaProd" className="text-center">
                                 Cod. Linea Prod
+                            </SortableHeader>
+                            <SortableHeader field="codPostazione" className="text-center">
+                                Cod. Postazione
+                            </SortableHeader>
+                            <SortableHeader field="serialeDispositivo" className="text-center">
+                                Seriale Dispositivo
+                            </SortableHeader>
+                            <SortableHeader field="dtIns" className="text-center">
+                                Data Inserimento
                             </SortableHeader>
                             <SortableHeader field="dtAgg" className="text-center">
                                 Data Aggiornamento
@@ -325,7 +372,7 @@ const ControlloQualitaTable = ({ data, updateRecord, refreshRecords }) => {
                     <tbody>
                         {paginatedData.length === 0 ? (
                             <tr>
-                                <td colSpan="3" className="px-4 py-8 text-center text-gray-500">
+                                <td colSpan="5" className="px-4 py-8 text-center text-gray-500">
                                     {filteredData.length === 0 && data?.length > 0 
                                         ? 'Nessun record trovato con i criteri di ricerca.' 
                                         : 'Nessun record disponibile.'
@@ -341,20 +388,29 @@ const ControlloQualitaTable = ({ data, updateRecord, refreshRecords }) => {
                                 >
                                     <td className="px-4 py-2 border-b text-center">
                                         <span className="bg-gray-600 text-white px-2 py-1 rounded-md text-sm font-medium">
-                                            {row.codArticolo}
+                                            {row.codLineaProd}
                                         </span>
                                     </td>
                                     <td className="px-4 py-2 border-b text-center">
                                         <span className="bg-gray-600 text-white px-2 py-1 rounded-md text-sm font-medium">
-                                            {row.codLineaProd}
+                                            {row.codPostazione}
                                         </span>
                                     </td>
-                                 
-                                      <td className="px-4 py-2 border-b text-center">
-                                    <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded-md text-sm font-medium">
-                                        {formatDate(row.dtAgg)}
-                                    </span>
-                                </td>
+                                    <td className="px-4 py-2 border-b text-center">
+                                        <span className="bg-gray-600 text-white px-2 py-1 rounded-md text-sm font-medium">
+                                            {row.serialeDispositivo}
+                                        </span>
+                                    </td>
+                                    <td className="px-4 py-2 border-b text-center">
+                                        <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded-md text-sm font-medium">
+                                            {formatDate(row.dtIns)}
+                                        </span>
+                                    </td>
+                                    <td className="px-4 py-2 border-b text-center">
+                                        <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded-md text-sm font-medium">
+                                            {formatDate(row.dtAgg)}
+                                        </span>
+                                    </td>
                                 </tr>
                             ))
                         )}
@@ -442,27 +498,6 @@ const ControlloQualitaTable = ({ data, updateRecord, refreshRecords }) => {
             >
                 {createMode && (
                     <div className="flex flex-col gap-4">
-                        {/* Cod. Articolo */}
-                        <div>
-                            <label className="font-semibold block mb-1">Cod. Articolo: <span className="text-red-500">*</span></label>
-                            <input
-                                type="text"
-                                value={form.codArticolo}
-                                onChange={(e) => setForm(prev => ({ ...prev, codArticolo: e.target.value }))}
-                                className={`w-full p-2 border rounded focus:ring-2 focus:ring-red-500 focus:border-transparent ${
-                                    form.codArticolo.length > 58 ? 'border-red-500' : 'border-gray-300'
-                                }`}
-                                placeholder="Inserisci codice articolo"
-                                maxLength={58}
-                            />
-                            <div className="text-xs text-gray-500 mt-1">
-                                {form.codArticolo.length}/58 
-                                {form.codArticolo.length > 58 && (
-                                    <span className="text-red-500 ml-2">Massimo 58 </span>
-                                )}
-                            </div>
-                        </div>
-
                         {/* Cod. Linea Prod */}
                         <div>
                             <label className="font-semibold block mb-1">Cod. Linea Prod: <span className="text-red-500">*</span></label>
@@ -471,7 +506,7 @@ const ControlloQualitaTable = ({ data, updateRecord, refreshRecords }) => {
                                 value={form.codLineaProd}
                                 onChange={(e) => setForm(prev => ({ ...prev, codLineaProd: e.target.value }))}
                                 className={`w-full p-2 border rounded focus:ring-2 focus:ring-red-500 focus:border-transparent ${
-                                    form.codLineaProd.length > 50? 'border-red-500' : 'border-gray-300'
+                                    form.codLineaProd.length > 50 ? 'border-red-500' : 'border-gray-300'
                                 }`}
                                 placeholder="Inserisci codice linea produzione"
                                 maxLength={50}
@@ -483,31 +518,95 @@ const ControlloQualitaTable = ({ data, updateRecord, refreshRecords }) => {
                                 )}
                             </div>
                         </div>
-                    </div>
-                )}
 
-                {editMode && (
-                    <div className="flex flex-col gap-4">
-                        {/* Cod. Articolo */}
+                        {/* Cod. Postazione */}
                         <div>
-                            <label className="font-semibold block mb-1">Cod. Articolo: <span className="text-red-500">*</span></label>
+                            <label className="font-semibold block mb-1">Cod. Postazione: <span className="text-red-500">*</span></label>
                             <input
                                 type="text"
-                                value={form.codArticolo}
-                                onChange={(e) => setForm(prev => ({ ...prev, codArticolo: e.target.value }))}
+                                value={form.codPostazione}
+                                onChange={(e) => setForm(prev => ({ ...prev, codPostazione: e.target.value }))}
                                 className={`w-full p-2 border rounded focus:ring-2 focus:ring-red-500 focus:border-transparent ${
-                                    form.codArticolo.length > 50 ? 'border-red-500' : 'border-gray-300'
+                                    form.codPostazione.length > 50 ? 'border-red-500' : 'border-gray-300'
                                 }`}
+                                placeholder="Inserisci codice postazione"
                                 maxLength={50}
                             />
                             <div className="text-xs text-gray-500 mt-1">
-                                {form.codArticolo.length}/50 caratteri
-                                {form.codArticolo.length > 50 && (
+                                {form.codPostazione.length}/50 caratteri
+                                {form.codPostazione.length > 50 && (
                                     <span className="text-red-500 ml-2">Massimo 50 caratteri</span>
                                 )}
                             </div>
                         </div>
 
+                        {/* Seriale Dispositivo */}
+                        <div>
+                            <label className="font-semibold block mb-1">Seriale Dispositivo: <span className="text-red-500">*</span></label>
+                            <input
+                                type="text"
+                                value={form.serialeDispositivo}
+                                onChange={(e) => setForm(prev => ({ ...prev, serialeDispositivo: e.target.value }))}
+                                className={`w-full p-2 border rounded focus:ring-2 focus:ring-red-500 focus:border-transparent ${
+                                    form.serialeDispositivo.length > 100 ? 'border-red-500' : 'border-gray-300'
+                                }`}
+                                placeholder="Inserisci seriale dispositivo"
+                                maxLength={100}
+                            />
+                            <div className="text-xs text-gray-500 mt-1">
+                                {form.serialeDispositivo.length}/100 caratteri
+                                {form.serialeDispositivo.length > 100 && (
+                                    <span className="text-red-500 ml-2">Massimo 100 caratteri</span>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Path Storage Dispositivo */}
+                        <div>
+                            <label className="font-semibold block mb-1">Path Storage Dispositivo: <span className="text-red-500">*</span></label>
+                            <input
+                                type="text"
+                                value={form.pathStorageDispositivo}
+                                onChange={(e) => setForm(prev => ({ ...prev, pathStorageDispositivo: e.target.value }))}
+                                className={`w-full p-2 border rounded focus:ring-2 focus:ring-red-500 focus:border-transparent ${
+                                    form.pathStorageDispositivo.length > 500 ? 'border-red-500' : 'border-gray-300'
+                                }`}
+                                placeholder="Inserisci path storage dispositivo"
+                                maxLength={500}
+                            />
+                            <div className="text-xs text-gray-500 mt-1">
+                                {form.pathStorageDispositivo.length}/500 caratteri
+                                {form.pathStorageDispositivo.length > 500 && (
+                                    <span className="text-red-500 ml-2">Massimo 500 caratteri</span>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Path Destinazione Spostamento */}
+                        <div>
+                            <label className="font-semibold block mb-1">Path Destinazione Spostamento: <span className="text-red-500">*</span></label>
+                            <input
+                                type="text"
+                                value={form.pathDestinazioneSpostamento}
+                                onChange={(e) => setForm(prev => ({ ...prev, pathDestinazioneSpostamento: e.target.value }))}
+                                className={`w-full p-2 border rounded focus:ring-2 focus:ring-red-500 focus:border-transparent ${
+                                    form.pathDestinazioneSpostamento.length > 500 ? 'border-red-500' : 'border-gray-300'
+                                }`}
+                                placeholder="Inserisci path destinazione spostamento"
+                                maxLength={500}
+                            />
+                            <div className="text-xs text-gray-500 mt-1">
+                                {form.pathDestinazioneSpostamento.length}/500 caratteri
+                                {form.pathDestinazioneSpostamento.length > 500 && (
+                                    <span className="text-red-500 ml-2">Massimo 500 caratteri</span>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {editMode && (
+                    <div className="flex flex-col gap-4">
                         {/* Cod. Linea Prod */}
                         <div>
                             <label className="font-semibold block mb-1">Cod. Linea Prod: <span className="text-red-500">*</span></label>
@@ -527,6 +626,86 @@ const ControlloQualitaTable = ({ data, updateRecord, refreshRecords }) => {
                                 )}
                             </div>
                         </div>
+
+                        {/* Cod. Postazione */}
+                        <div>
+                            <label className="font-semibold block mb-1">Cod. Postazione: <span className="text-red-500">*</span></label>
+                            <input
+                                type="text"
+                                value={form.codPostazione}
+                                onChange={(e) => setForm(prev => ({ ...prev, codPostazione: e.target.value }))}
+                                className={`w-full p-2 border rounded focus:ring-2 focus:ring-red-500 focus:border-transparent ${
+                                    form.codPostazione.length > 50 ? 'border-red-500' : 'border-gray-300'
+                                }`}
+                                maxLength={50}
+                            />
+                            <div className="text-xs text-gray-500 mt-1">
+                                {form.codPostazione.length}/50 caratteri
+                                {form.codPostazione.length > 50 && (
+                                    <span className="text-red-500 ml-2">Massimo 50 caratteri</span>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Seriale Dispositivo */}
+                        <div>
+                            <label className="font-semibold block mb-1">Seriale Dispositivo: <span className="text-red-500">*</span></label>
+                            <input
+                                type="text"
+                                value={form.serialeDispositivo}
+                                onChange={(e) => setForm(prev => ({ ...prev, serialeDispositivo: e.target.value }))}
+                                className={`w-full p-2 border rounded focus:ring-2 focus:ring-red-500 focus:border-transparent ${
+                                    form.serialeDispositivo.length > 100 ? 'border-red-500' : 'border-gray-300'
+                                }`}
+                                maxLength={100}
+                            />
+                            <div className="text-xs text-gray-500 mt-1">
+                                {form.serialeDispositivo.length}/100 caratteri
+                                {form.serialeDispositivo.length > 100 && (
+                                    <span className="text-red-500 ml-2">Massimo 100 caratteri</span>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Path Storage Dispositivo */}
+                        <div>
+                            <label className="font-semibold block mb-1">Path Storage Dispositivo: <span className="text-red-500">*</span></label>
+                            <input
+                                type="text"
+                                value={form.pathStorageDispositivo}
+                                onChange={(e) => setForm(prev => ({ ...prev, pathStorageDispositivo: e.target.value }))}
+                                className={`w-full p-2 border rounded focus:ring-2 focus:ring-red-500 focus:border-transparent ${
+                                    form.pathStorageDispositivo.length > 500 ? 'border-red-500' : 'border-gray-300'
+                                }`}
+                                maxLength={500}
+                            />
+                            <div className="text-xs text-gray-500 mt-1">
+                                {form.pathStorageDispositivo.length}/500 caratteri
+                                {form.pathStorageDispositivo.length > 500 && (
+                                    <span className="text-red-500 ml-2">Massimo 500 caratteri</span>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Path Destinazione Spostamento */}
+                        <div>
+                            <label className="font-semibold block mb-1">Path Destinazione Spostamento: <span className="text-red-500">*</span></label>
+                            <input
+                                type="text"
+                                value={form.pathDestinazioneSpostamento}
+                                onChange={(e) => setForm(prev => ({ ...prev, pathDestinazioneSpostamento: e.target.value }))}
+                                className={`w-full p-2 border rounded focus:ring-2 focus:ring-red-500 focus:border-transparent ${
+                                    form.pathDestinazioneSpostamento.length > 500 ? 'border-red-500' : 'border-gray-300'
+                                }`}
+                                maxLength={500}
+                            />
+                            <div className="text-xs text-gray-500 mt-1">
+                                {form.pathDestinazioneSpostamento.length}/500 caratteri
+                                {form.pathDestinazioneSpostamento.length > 500 && (
+                                    <span className="text-red-500 ml-2">Massimo 500 caratteri</span>
+                                )}
+                            </div>
+                        </div>
                     </div>
                 )}
 
@@ -534,12 +713,28 @@ const ControlloQualitaTable = ({ data, updateRecord, refreshRecords }) => {
                     <div className="flex flex-col gap-4">
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="font-semibold block mb-1">Cod. Articolo:</label>
-                                <p className="p-2 bg-gray-50 rounded border">{selectedRow.codArticolo}</p>
+                                <label className="font-semibold block mb-1">ID:</label>
+                                <p className="p-2 bg-gray-50 rounded border">{selectedRow.id}</p>
                             </div>
                             <div>
                                 <label className="font-semibold block mb-1">Cod. Linea Prod:</label>
                                 <p className="p-2 bg-gray-50 rounded border">{selectedRow.codLineaProd}</p>
+                            </div>
+                            <div>
+                                <label className="font-semibold block mb-1">Cod. Postazione:</label>
+                                <p className="p-2 bg-gray-50 rounded border">{selectedRow.codPostazione}</p>
+                            </div>
+                            <div>
+                                <label className="font-semibold block mb-1">Seriale Dispositivo:</label>
+                                <p className="p-2 bg-gray-50 rounded border">{selectedRow.serialeDispositivo}</p>
+                            </div>
+                            <div className="col-span-2">
+                                <label className="font-semibold block mb-1">Path Storage Dispositivo:</label>
+                                <p className="p-2 bg-gray-50 rounded border break-all">{selectedRow.pathStorageDispositivo}</p>
+                            </div>
+                            <div className="col-span-2">
+                                <label className="font-semibold block mb-1">Path Destinazione Spostamento:</label>
+                                <p className="p-2 bg-gray-50 rounded border break-all">{selectedRow.pathDestinazioneSpostamento}</p>
                             </div>
                             <div>
                                 <label className="font-semibold block mb-1">Data Inserimento:</label>
@@ -594,4 +789,4 @@ const ControlloQualitaTable = ({ data, updateRecord, refreshRecords }) => {
     );
 };
 
-export default ControlloQualitaTable;
+export default DispositiviMultimedialiTable;
