@@ -1,100 +1,63 @@
-# SmartMob Frontend - Docker Deployment
+# SmartMob Frontend
 
-This is the frontend application for SmartMob built with React, Vite, and Tailwind CSS.
+React frontend application for SmartMob built with Vite and Tailwind CSS.
 
-## 🚀 Quick Start with Docker
+## 🚀 Quick Start
 
 ### Prerequisites
-- Docker Desktop installed
-- Git installed
+- Docker Desktop
+- Git
 
-### Deployment Steps
+### Setup Steps
 ```bash
-# 1. Clone the frontend repository
+# 1. Clone the repository
 git clone https://github.com/DouiriMouheb/SmartMobFront.git
 cd SmartMobFront
 
-# 2. Copy environment file and configure
+# 2. Create your environment file
 cp .env.example .env
 
-# 3. Build and run frontend
-docker-compose up --build -d
+# 3. Edit .env file to set your API URL
+# VITE_API_BASE_URL=https://your-api-url.com
+
+# 4. Build and run with Docker
+docker-compose up --build
 ```
 
-### Access the Application
-- Frontend: http://localhost:3000
-- Make sure your API is running on: http://localhost:5000
+The application will be available at: http://localhost:3000
 
-## 🐳 Docker Commands
+## 🔧 Configuration
 
-### Frontend Deployment
+### Environment Variables
+
+Edit your `.env` file:
+
 ```bash
-# Build and start frontend
+# Required: Your API base URL
+VITE_API_BASE_URL=https://localhost:7052
+```
+
+**Important**: Environment variables are built into the application at build time. If you change your `.env` file, you must rebuild:
+
+```bash
+docker-compose up --build
+```
+
+## � Docker Commands
+
+```bash
+# Build and start
 docker-compose up --build
 
 # Run in background
 docker-compose up -d --build
 
-# Stop frontend
+# Stop
 docker-compose down
 
 # View logs
 docker-compose logs -f smartmob-frontend
 ```
-
-### Alternative: Direct Docker
-```bash
-# Build frontend image
-docker build -t smartmob-frontend .
-
-# Run frontend container
-docker run -p 3000:80 -e VITE_API_BASE_URL=http://localhost:5000 smartmob-frontend
-```
-
-## 🔧 Configuration
-
-### Environment Variables
-Create a `.env` file from `.env.example` and configure:
-- `VITE_API_BASE_URL`: URL of your backend API (default: http://localhost:5000)
-
-### API Requirements
-Your backend API should:
-- Be running separately on port 5000 (using its own Docker setup)
-- Have CORS enabled for http://localhost:3000
-- Have the following endpoints:
-  - `/api/DatabaseRecords` (for Settings page)
-  - `/api/ControlloQualita` (for Quality Control page)
-
-## 📋 Complete Deployment Workflow
-
-### On New Desktop:
-
-1. **Deploy API First**:
-   ```bash
-   # In SmartMob API folder
-   cd SmartMob
-   docker-compose up --build -d
-   # API will be available on http://localhost:5000
-   ```
-
-2. **Deploy Frontend**:
-   ```bash
-   # In SmartMobFront folder
-   cd SmartMobFront
-   cp .env.example .env
-   docker-compose up --build -d
-   # Frontend will be available on http://localhost:3000
-   ```
-
-3. **Access Application**:
-   - Frontend: http://localhost:3000
-   - API: http://localhost:5000
-
-## 📋 Features
-
-- **Settings Page**: CRUD operations for database records
-- **Controllo Qualità**: Quality control management
-- **Responsive Design**: Works on desktop and mobile
 - **Search & Filtering**: Advanced table functionality
 - **Pagination**: Configurable records per page
 - **Italian Localization**: All text in Italian
