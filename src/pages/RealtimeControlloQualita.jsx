@@ -56,13 +56,20 @@ const RealtimeControlloQualita = () => {
       return imageUrl;
     }
     
-    // For any other format, try to make it a valid URL
-    // This handles cases where protocol might be missing
-    if (imageUrl.includes('.') && !imageUrl.includes(' ')) {
-      return `https://${imageUrl}`;
+    // Handle database format like "192.168.1.90/public/Canon%20EOS%20R100/100CANON/IMG_0317.JPG"
+    // Use HTTP protocol for network file access (assumes the server has HTTP file sharing enabled)
+    if (imageUrl.match(/^\d+\.\d+\.\d+\.\d+\//) || (imageUrl.includes('.') && !imageUrl.includes(' '))) {
+      return `http://${imageUrl}`;
     }
     
     return imageUrl;
+  };
+
+  // Simple function to open image URL in new window
+  const handleImageOpen = (imageUrl) => {
+    if (imageUrl) {
+      window.open(imageUrl, '_blank');
+    }
   };
 
   // Helper function to format timestamps
@@ -408,17 +415,31 @@ const RealtimeControlloQualita = () => {
       <label className="block text-xs font-medium text-gray-600 mb-1">Foto Superiore</label>
       <div className="bg-gray-50 p-2 rounded">
         {selectedRecord.fotO_SUPERIORE ? (
-          <img 
-            src={formatImageUrl(selectedRecord.fotO_SUPERIORE)} 
-            alt="Foto Superiore"
-            className="w-full h-40 object-cover rounded border"
-            onError={(e) => {
-              console.log('Image failed to load:', e.target.src);
-              console.log('Original path:', selectedRecord.fotO_SUPERIORE);
-              e.target.style.display = 'none';
-              e.target.nextSibling.style.display = 'flex';
-            }}
-          />
+          <div className="relative group">
+            <img 
+              src={selectedRecord.fotO_SUPERIORE} 
+              alt="Foto Superiore"
+              className="w-full h-40 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={() => handleImageOpen(selectedRecord.fotO_SUPERIORE)}
+              onError={(e) => {
+                console.log('Image failed to load:', e.target.src);
+                console.log('Original path:', selectedRecord.fotO_SUPERIORE);
+                e.target.style.display = 'none';
+                e.target.nextSibling.style.display = 'flex';
+              }}
+            />
+            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black bg-opacity-50 rounded cursor-pointer"
+                 onClick={() => handleImageOpen(selectedRecord.fotO_SUPERIORE)}>
+              <Eye className="w-8 h-8 text-white" />
+            </div>
+            <button
+              onClick={() => handleImageOpen(selectedRecord.fotO_SUPERIORE)}
+              className="mt-2 w-full px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center justify-center gap-2 transition-colors text-sm"
+            >
+              <Eye size={16} />
+              Apri in nuova finestra
+            </button>
+          </div>
         ) : null}
         <div className="hidden items-center justify-center h-40 text-gray-500 text-sm bg-gray-100 rounded border">
           <div className="text-center">
@@ -433,17 +454,31 @@ const RealtimeControlloQualita = () => {
       <label className="block text-xs font-medium text-gray-600 mb-1">Foto Frontale</label>
       <div className="bg-gray-50 p-2 rounded">
         {selectedRecord.fotO_FRONTALE ? (
-          <img 
-            src={formatImageUrl(selectedRecord.fotO_FRONTALE)} 
-            alt="Foto Frontale"
-            className="w-full h-40 object-cover rounded border"
-            onError={(e) => {
-              console.log('Image failed to load:', e.target.src);
-              console.log('Original path:', selectedRecord.fotO_FRONTALE);
-              e.target.style.display = 'none';
-              e.target.nextSibling.style.display = 'flex';
-            }}
-          />
+          <div className="relative group">
+            <img 
+              src={selectedRecord.fotO_FRONTALE} 
+              alt="Foto Frontale"
+              className="w-full h-40 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={() => handleImageOpen(selectedRecord.fotO_FRONTALE)}
+              onError={(e) => {
+                console.log('Image failed to load:', e.target.src);
+                console.log('Original path:', selectedRecord.fotO_FRONTALE);
+                e.target.style.display = 'none';
+                e.target.nextSibling.style.display = 'flex';
+              }}
+            />
+            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black bg-opacity-50 rounded cursor-pointer"
+                 onClick={() => handleImageOpen(selectedRecord.fotO_FRONTALE)}>
+              <Eye className="w-8 h-8 text-white" />
+            </div>
+            <button
+              onClick={() => handleImageOpen(selectedRecord.fotO_FRONTALE)}
+              className="mt-2 w-full px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center justify-center gap-2 transition-colors text-sm"
+            >
+              <Eye size={16} />
+              Apri in nuova finestra
+            </button>
+          </div>
         ) : null}
         <div className="hidden items-center justify-center h-40 text-gray-500 text-sm bg-gray-100 rounded border">
           <div className="text-center">

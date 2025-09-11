@@ -8,6 +8,7 @@ import TablePage from './pages/TablePage';
 import ControlloQualita from './pages/ControlloQualita';
 import DispositiviMultimediali from './pages/DispositiviMultimediali';
 import RealtimeControlloQualita from './pages/RealtimeControlloQualita';
+import Acquisizioni from './pages/Acquisizioni';
 
 
 const App = () => (
@@ -27,9 +28,11 @@ const App = () => (
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/settings" element={<TablePage />} />
+        <Route path="/acquisizioni" element={<Acquisizioni />} />
         <Route path="/controllo-qualita" element={<ControlloQualita />} />
         <Route path="/dispositivi-multimediali" element={<DispositiviMultimediali />} />
         <Route path="/realtime-controllo" element={<RealtimeControlloQualita />} />
+        
       </Routes>
     </MainLayout>
   </Router>
