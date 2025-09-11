@@ -297,16 +297,10 @@ const DispositiviMultimedialiTable = ({ data, updateRecord, refreshRecords }) =>
         
         return (
             <>
-                <button 
-                    type="button" 
-                    className="px-3 py-1 bg-gray-300 rounded" 
-                    onClick={handleCloseModal}
-                >
-                    Chiudi
-                </button>
+             
                 <button
                     type="button"
-                    className="px-3 py-1 bg-red-500 text-white rounded flex items-center"
+                    className="px-3 py-1 bg-blue-500 text-white rounded flex items-center"
                     onClick={handleEditClick}
                 >
                     <Edit size={16} className="mr-1" />
@@ -319,6 +313,13 @@ const DispositiviMultimedialiTable = ({ data, updateRecord, refreshRecords }) =>
                 >
                     <Trash2 size={16} className="mr-1" />
                     Elimina
+                </button>
+                   <button 
+                    type="button" 
+                    className="px-3 py-1 bg-gray-300 rounded" 
+                    onClick={handleCloseModal}
+                >
+                    Chiudi
                 </button>
             </>
         );

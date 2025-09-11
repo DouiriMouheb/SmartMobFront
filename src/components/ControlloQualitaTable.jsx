@@ -255,23 +255,15 @@ const ControlloQualitaTable = ({ data, updateRecord, refreshRecords }) => {
         }
         
         return (
-            <>
-                <button 
-                    type="button" 
-                    className="px-3 py-1 bg-gray-300 rounded" 
-                    onClick={handleCloseModal}
-                >
-                    Chiudi
-                </button>
-                <button
+            <>  <button
                     type="button"
-                    className="px-3 py-1 bg-red-500 text-white rounded flex items-center"
+                    className="px-3 py-1 bg-blue-500 text-white rounded flex items-center"
                     onClick={handleEditClick}
                 >
                     <Edit size={16} className="mr-1" />
                     Modifica
                 </button>
-                <button
+                  <button
                     type="button"
                     className="px-3 py-1 bg-red-600 text-white rounded flex items-center"
                     onClick={handleDeleteClick}
@@ -279,6 +271,15 @@ const ControlloQualitaTable = ({ data, updateRecord, refreshRecords }) => {
                     <Trash2 size={16} className="mr-1" />
                     Elimina
                 </button>
+                <button 
+                    type="button" 
+                    className="px-3 py-1 bg-gray-300 rounded" 
+                    onClick={handleCloseModal}
+                >
+                    Chiudi
+                </button>
+              
+              
             </>
         );
     };
@@ -441,7 +442,7 @@ const ControlloQualitaTable = ({ data, updateRecord, refreshRecords }) => {
                 footer={getModalFooter()}
             >
                 {createMode && (
-                    <div className="flex flex-col gap-4">
+                  <div className="grid grid-cols-2 gap-4">
                         {/* Cod. Articolo */}
                         <div>
                             <label className="font-semibold block mb-1">Cod. Articolo: <span className="text-red-500">*</span></label>
@@ -487,7 +488,7 @@ const ControlloQualitaTable = ({ data, updateRecord, refreshRecords }) => {
                 )}
 
                 {editMode && (
-                    <div className="flex flex-col gap-4">
+                 <div className="grid grid-cols-2 gap-4">
                         {/* Cod. Articolo */}
                         <div>
                             <label className="font-semibold block mb-1">Cod. Articolo: <span className="text-red-500">*</span></label>

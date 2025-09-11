@@ -24,11 +24,11 @@ export default function Modal({
 
   return (
     <div
-      className={`fixed inset-0 backdrop-blur-md bg-black/20 flex items-center justify-center z-[100] p-4 ${className}`}
+      className={`fixed inset-0 backdrop-blur-md bg-black/20 flex items-center justify-center z-[100] p-4`}
       onClick={handleBackdropClick}
     >
       <div
-        className={`bg-white rounded-xl shadow-2xl border border-slate-200 w-full ${sizeClasses[size]} max-h-[90vh] min-h-fit overflow-hidden flex flex-col`}
+        className={`bg-white rounded-xl shadow-2xl border border-slate-200 w-full ${className || sizeClasses[size]} max-h-[90vh] min-h-fit overflow-hidden flex flex-col`}
         onClick={(e) => e.stopPropagation()}
       >
         {showHeader && title && (

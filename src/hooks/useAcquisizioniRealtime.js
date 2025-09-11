@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import acquisizioniService from '../services/acquisizioniService';
 
 // Updated API base URL to match the correct server
-const API_BASE_URL = 'https://localhost:7052';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ;
 const HUB_URL = `${API_BASE_URL}/hubs/acquisizioni`;
 
 const useAcquisizioniRealtime = () => {
@@ -28,7 +28,7 @@ const useAcquisizioniRealtime = () => {
       const data = await acquisizioniService.getLatestAcquisizioni();
       setAcquisizioni(data);
       setLastUpdated(new Date().toISOString());
-      toast.success('Dati iniziali caricati con successo');
+      
     } catch (err) {
       console.error('Error fetching initial data:', err);
       setError(`Errore nel caricamento dei dati: ${err.message}`);
@@ -102,7 +102,7 @@ const useAcquisizioniRealtime = () => {
     hubConnection.on('Connected', (id) => {
       console.log('✅ SignalR Connected event received with ID:', id);
       setConnectionId(id);
-      toast.success(`Connesso con ID: ${id}`);
+     
     });
 
     hubConnection.on('AcquisizioniUpdated', (data) => {
@@ -113,10 +113,7 @@ const useAcquisizioniRealtime = () => {
         console.log('📋 Processing acquisizioni:', newAcquisizioni.length, 'records');
         setAcquisizioni(newAcquisizioni);
         setLastUpdated(new Date().toISOString());
-        toast.success(`🔄 Aggiornamento real-time: ${newAcquisizioni.length} record`, {
-          duration: 3000,
-          icon: '🔄'
-        });
+       
       } catch (err) {
         console.error('❌ Error processing AcquisizioniUpdated:', err);
         toast.error('Errore nell\'elaborazione degli aggiornamenti real-time');

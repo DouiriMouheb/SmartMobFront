@@ -1,22 +1,26 @@
 import React, { useState } from 'react';
-import { 
-  Wifi, 
-  WifiOff, 
-  RefreshCw, 
-  Activity, 
-  Clock, 
-  Hash, 
-  Eye,
-  EyeOff,
+import {
+  Wifi,
+  WifiOff,
+  RefreshCw,
+  Activity,
+  Clock,
+  Hash,
   CheckCircle,
   Loader,
   Camera,
   Package,
-  ShoppingCart
+  ShoppingCart,
+  Eye,
+  CloudCog
 } from 'lucide-react';
 import useAcquisizioniRealtime from '../hooks/useAcquisizioniRealtime';
+import Modal from '../components/Modal';
 
 const RealtimeControlloQualita = () => {
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState(null);
+
   const {
     connectionState,
     connectionId,
@@ -33,8 +37,33 @@ const RealtimeControlloQualita = () => {
     isDisconnected,
   } = useAcquisizioniRealtime();
 
-  const [showDetails, setShowDetails] = useState(false);
-  const [selectedRecord, setSelectedRecord] = useState(null);
+  // Helper function to format image URLs
+  const formatImageUrl = (imageUrl) => {
+    if (!imageUrl) return null;
+    
+    // If it's already a proper web URL, return as is
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      return imageUrl;
+    }
+    
+    // If it starts with //, add https:
+    if (imageUrl.startsWith('//')) {
+      return `https:${imageUrl}`;
+    }
+    
+    // If it's a relative path, assume it's from your domain
+    if (imageUrl.startsWith('/')) {
+      return imageUrl;
+    }
+    
+    // For any other format, try to make it a valid URL
+    // This handles cases where protocol might be missing
+    if (imageUrl.includes('.') && !imageUrl.includes(' ')) {
+      return `https://${imageUrl}`;
+    }
+    
+    return imageUrl;
+  };
 
   // Helper function to format timestamps
   const formatTimestamp = (timestamp) => {
@@ -69,343 +98,478 @@ const RealtimeControlloQualita = () => {
 
   const { icon: StatusIcon, color, bg, text: statusText } = getConnectionStatus();
 
-  // Handle record selection for details view
-  const handleRecordClick = (record) => {
+  // Modal handlers
+  const handleViewClick = (record) => {
     setSelectedRecord(record);
-    setShowDetails(true);
+    console.log(selectedRecord)
+    setModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setSelectedRecord(null);
   };
 
   // Get quality control result badge
   const getQualityBadge = (esito) => {
     if (esito === null || esito === undefined) return null;
-    
+
     // Handle boolean values
     if (typeof esito === 'boolean') {
       return (
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-          esito ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-        }`}>
-          {esito ? 'OK' : 'KO'}
+        <span className={`px-2 py-1 rounded-full text-xs font-medium ${esito ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+          }`}>
+          {esito ? 'OK' : 'NOT OK'}
         </span>
       );
     }
-    
+
     // Handle string values
     const esitoStr = String(esito).toLowerCase();
     const isSuccess = esitoStr.includes('ok') || esitoStr.includes('pass') || esitoStr === 'true';
     return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-        isSuccess ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-      }`}>
+      <span className={`px-2 py-1 rounded-full text-xs font-medium ${isSuccess ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+        }`}>
         {String(esito)}
       </span>
     );
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      {/* Header */}
+    <div className="p-2 max-w-7xl mx-auto">
+      {/*
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Real-time Controllo Qualità
-        </h1>
-        <p className="text-gray-600">
-          Monitoraggio in tempo reale delle acquisizioni di controllo qualità
-        </p>
-      </div>
-
-      {/* Connection Status Card */}
-      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div className={`p-3 rounded-full ${bg}`}>
-              <StatusIcon className={`w-6 h-6 ${color} ${(isConnecting || isReconnecting) ? 'animate-spin' : ''}`} />
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900">Stato Connessione</h3>
-              <p className={`text-sm font-medium ${color}`}>{statusText}</p>
-              {connectionId && (
-                <p className="text-xs text-gray-500">ID: {connectionId}</p>
-              )}
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-3">
-            {/* Statistics */}
-            <div className="text-center">
-              <div className="flex items-center space-x-1">
-                <Hash className="w-4 h-4 text-gray-500" />
-                <span className="text-2xl font-bold text-gray-900">{recordCount}</span>
-              </div>
-              <p className="text-xs text-gray-500">Record</p>
-            </div>
-
-            {lastUpdated && (
-              <div className="text-center">
-                <div className="flex items-center space-x-1">
-                  <Clock className="w-4 h-4 text-gray-500" />
-                  <span className="text-sm font-medium text-gray-700">
-                    {formatTimestamp(lastUpdated).split(' ')[1]}
-                  </span>
-                </div>
-                <p className="text-xs text-gray-500">Ultimo aggiornamento</p>
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-2xl font-bold text-gray-900">Controllo Qualità Real-time</h1>
+          <div className="flex items-center gap-4">
+          
+            {connectionId && (
+              <div className="text-sm text-gray-600">
+                ID: {connectionId.substring(0, 8)}...
               </div>
             )}
-
-            {/* Action Buttons */}
-            <div className="flex space-x-2">
-              <button
-                onClick={refreshData}
-                disabled={isLoading}
-                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
-              >
-                <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-                <span>Aggiorna</span>
-              </button>
-
-              {isDisconnected && (
-                <button
-                  onClick={reconnect}
-                  disabled={isConnecting}
-                  className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
-                >
-                  <Wifi className="w-4 h-4" />
-                  <span>Riconnetti</span>
-                </button>
-              )}
+          </div>
+        </div>
+        
+       
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="bg-white rounded-lg border border-gray-200 p-4">
+            <div className="flex items-center gap-3">
+              <Hash className="w-5 h-5 text-blue-500" />
+              <div>
+                <p className="text-sm text-gray-600">Acquisizioni Totali</p>
+                <p className="text-xl font-bold text-gray-900">{recordCount}</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg border border-gray-200 p-4">
+            <div className="flex items-center gap-3">
+              <Clock className="w-5 h-5 text-green-500" />
+              <div>
+                <p className="text-sm text-gray-600">Ultimo Aggiornamento</p>
+                <p className="text-xl font-bold text-gray-900">
+                  {lastUpdated ? formatTimestamp(lastUpdated) : 'N/A'}
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg border border-gray-200 p-4">
+            <div className="flex items-center gap-3">
+              <Activity className="w-5 h-5 text-purple-500" />
+              <div>
+                <p className="text-sm text-gray-600">Stato Connessione</p>
+                <p className="text-xl font-bold text-gray-900">{statusText}</p>
+              </div>
             </div>
           </div>
         </div>
-
-        {error && (
-          <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg flex items-center space-x-2">
-            <AlertCircle className="w-5 h-5" />
-            <span>{error}</span>
-          </div>
-        )}
       </div>
+    */}
 
-      {/* Data Table */}
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-900 flex items-center space-x-2">
-              <Activity className="w-5 h-5" />
-              <span>Acquisizioni in Tempo Reale</span>
-            </h3>
-            <button
-              onClick={() => setShowDetails(!showDetails)}
-              className="px-3 py-1 text-sm bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors flex items-center space-x-1"
-            >
-              {showDetails ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              <span>{showDetails ? 'Nascondi dettagli' : 'Mostra dettagli'}</span>
-            </button>
-          </div>
+
+      {/* Data Cards */}
+      {isLoading && acquisizioni.length === 0 ? (
+        <div className="p-8 text-center">
+          <Loader className="w-8 h-8 animate-spin mx-auto mb-4 text-gray-400" />
+          <p className="text-gray-500">Caricamento dati...</p>
         </div>
+      ) : acquisizioni.length === 0 ? (
+        <div className="p-8 text-center">
+          <Activity className="w-8 h-8 mx-auto mb-4 text-gray-400" />
+          <p className="text-gray-500">Nessuna acquisizione disponibile</p>
+        </div>
+      ) : (
+        <div className="p-6">
+          <div className="grid grid-cols-1 gap-8">
+            {acquisizioni.map((record, index) => {
+              // Determine the color of the quality indicator square
+              const getQualitySquareColor = (esito) => {
+                if (esito === null || esito === undefined) {
+                  return 'bg-gray-400'; // Gray for null
+                }
+                return esito ? 'bg-green-500' : 'bg-red-500'; // Green for true, red for false
+              };
 
-        {isLoading && acquisizioni.length === 0 ? (
-          <div className="p-8 text-center">
-            <Loader className="w-8 h-8 animate-spin mx-auto mb-4 text-gray-400" />
-            <p className="text-gray-500">Caricamento dati...</p>
-          </div>
-        ) : acquisizioni.length === 0 ? (
-          <div className="p-8 text-center">
-            <Activity className="w-8 h-8 mx-auto mb-4 text-gray-400" />
-            <p className="text-gray-500">Nessuna acquisizione disponibile</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Linea</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Postazione</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Articolo</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ordine</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CQ Articolo</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CQ Box</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CQ Abilitato</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Foto</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data Inserimento</th>
-                  {showDetails && (
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Azioni</th>
-                  )}
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {acquisizioni.map((record, index) => (
-                  <tr 
-                    key={record.id || index} 
-                    className={`hover:bg-gray-50 transition-colors ${showDetails ? 'cursor-pointer' : ''}`}
-                    onClick={showDetails ? () => handleRecordClick(record) : undefined}
-                  >
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {record.id}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
-                        {record.coD_LINEA || 'N/A'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs font-medium">
-                        {record.coD_POSTAZIONE || 'N/A'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      <div className="flex items-center space-x-1">
-                        <Package className="w-4 h-4 text-gray-400" />
-                        <span>{record.codicE_ARTICOLO || 'N/A'}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      <div className="flex items-center space-x-1">
-                        <ShoppingCart className="w-4 h-4 text-gray-400" />
-                        <span>{record.codicE_ORDINE || 'N/A'}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {getQualityBadge(record.esitO_CQ_ARTICOLO)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {getQualityBadge(record.esitO_CQ_BOX)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {getQualityBadge(record.abilitA_CQ)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      <div className="flex space-x-1">
-                        {record.fotO_SUPERIORE && (
-                          <Camera className="w-4 h-4 text-green-500" title="Foto Superiore" />
-                        )}
-                        {record.fotO_FRONTALE && (
-                          <Camera className="w-4 h-4 text-blue-500" title="Foto Frontale" />
-                        )}
-                        {record.fotO_BOX && (
-                          <Camera className="w-4 h-4 text-purple-500" title="Foto Box" />
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatTimestamp(record.dT_INS)}
-                    </td>
-                    {showDetails && (
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <button className="text-blue-600 hover:text-blue-800 font-medium">
-                          Dettagli
-                        </button>
-                      </td>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {/* Details Modal */}
-      {selectedRecord && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-96 overflow-y-auto">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  Dettagli Acquisizione #{selectedRecord.id}
-                </h3>
-                <button
-                  onClick={() => setSelectedRecord(null)}
-                  className="text-gray-400 hover:text-gray-600"
+              return (
+                <div
+                  key={record.id || index}
+                  className="bg-white border-2 rounded-xl p-8 hover:shadow-xl transition-all duration-300 border-gray-200"
                 >
-                  ✕
-                </button>
-              </div>
-              
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">ID</label>
-                    <p className="mt-1 text-sm text-gray-900">{selectedRecord.id || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Codice Linea</label>
-                    <p className="mt-1 text-sm text-gray-900">{selectedRecord.coD_LINEA || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Codice Postazione</label>
-                    <p className="mt-1 text-sm text-gray-900">{selectedRecord.coD_POSTAZIONE || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Codice Articolo</label>
-                    <p className="mt-1 text-sm text-gray-900">{selectedRecord.codicE_ARTICOLO || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Codice Ordine</label>
-                    <p className="mt-1 text-sm text-gray-900">{selectedRecord.codicE_ORDINE || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Abilitazione CQ</label>
-                    <p className="mt-1 text-sm text-gray-900">{selectedRecord.abilitA_CQ !== null ? (selectedRecord.abilitA_CQ ? 'Sì' : 'No') : 'N/A'}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Esito CQ Articolo</label>
-                    <p className="mt-1 text-sm text-gray-900">{selectedRecord.esitO_CQ_ARTICOLO !== null ? (selectedRecord.esitO_CQ_ARTICOLO ? 'OK' : 'KO') : 'N/A'}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Esito CQ Box</label>
-                    <p className="mt-1 text-sm text-gray-900">{selectedRecord.esitO_CQ_BOX !== null ? (selectedRecord.esitO_CQ_BOX ? 'OK' : 'KO') : 'N/A'}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Scostamento CQ Articolo</label>
-                    <p className="mt-1 text-sm text-gray-900">{selectedRecord.scostamentO_CQ_ARTICOLO || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Confidenza CQ Box</label>
-                    <p className="mt-1 text-sm text-gray-900">{selectedRecord.confidenzA_CQ_BOX || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Data Inserimento</label>
-                    <p className="mt-1 text-sm text-gray-900">{formatTimestamp(selectedRecord.dT_INS)}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Data Aggiornamento</label>
-                    <p className="mt-1 text-sm text-gray-900">{formatTimestamp(selectedRecord.dT_AGG)}</p>
+                  <div className="flex flex-col lg:flex-row items-center justify-center gap-8">
+                    {/* Left side - Info fields */}
+                    <div className="flex-shrink-0 lg:w-2/5 space-y-6">
+                      <div className={`flex items-right-2 px-3 py-2 rounded-lg ${bg}`}>
+                        <StatusIcon className={`w-5 h-5 ${color} ${(isConnecting || isReconnecting) ? 'animate-spin' : ''}`} />
+                        <span className={`font-medium ${color}`}>{statusText}</span>
+                      </div>
+
+                      <div className="text-center lg:text-left">
+                        <label className="block text-lg font-semibold text-gray-700 mb-2">
+                          Codice Articolo
+                        </label>
+                        <div className="flex items-center justify-center lg:justify-start space-x-3">
+                          <Package className="w-6 h-6 text-gray-400" />
+                          <span className="text-2xl font-bold text-gray-900">
+                            {record.codicE_ARTICOLO || 'N/A'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="text-center lg:text-left">
+                        <label className="block text-lg font-semibold text-gray-700 mb-2">
+                          Codice Ordine
+                        </label>
+                        <div className="flex items-center justify-center lg:justify-start space-x-3">
+                          <ShoppingCart className="w-6 h-6 text-gray-400" />
+                          <span className="text-2xl font-bold text-gray-900">
+                            {record.codicE_ORDINE || 'N/A'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="text-center lg:text-left">
+                        <label className="block text-lg font-semibold text-gray-700 mb-2">
+                          Abilita CQ
+                        </label>
+                        <div className="flex items-center justify-center lg:justify-start space-x-3">
+                          <CheckCircle className="w-6 h-6 text-gray-400" />
+                          <span className="text-2xl font-bold text-gray-900">
+                            {record.abilitA_CQ !== null ? (record.abilitA_CQ ? 'Sì' : 'No') : 'N/A'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Always show additional info */}
+                      <div className="pt-4 border-t border-gray-200 space-y-3 text-center lg:text-left">
+                        <div className="text-lg text-gray-600">
+                          <strong>ID:</strong> {record.id}
+                        </div>
+                        <div className="text-lg text-gray-600">
+                          <strong>Data:</strong> {formatTimestamp(record.dT_INS)}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Center - Quality indicator square (60% of screen width) */}
+                    <div className="flex-grow flex flex-col items-center justify-center lg:w-3/5">
+                      <label className="block text-xl font-bold text-gray-700 mb-4 text-center">
+                        Esito CQ Articolo
+                      </label>
+                      <div
+                        className={`w-80 h-80 lg:w-96 lg:h-96 xl:w-[28rem] xl:h-[28rem] rounded-2xl ${getQualitySquareColor(record.esitO_CQ_ARTICOLO)} 
+                          shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-105 hover:shadow-3xl`}
+                      >
+                        <span className="text-white font-bold text-6xl lg:text-7xl xl:text-8xl">
+                          {record.esitO_CQ_ARTICOLO === null || record.esitO_CQ_ARTICOLO === undefined
+                            ? '-'
+                            : record.esitO_CQ_ARTICOLO
+                              ? '✓'
+                              : '✗'
+                          }
+                        </span>
+                      </div>
+                      <div className="mt-4 text-lg font-semibold text-center text-gray-600">
+                        {record.esitO_CQ_ARTICOLO === null || record.esitO_CQ_ARTICOLO === undefined
+                          ? 'NON TESTATO'
+                          : record.esitO_CQ_ARTICOLO
+                            ? 'APPROVATO'
+                            : 'RESPINTO'
+                        }
+                      </div>
+                      <button
+                        onClick={() => handleViewClick(record)}
+                        className="mt-6 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center gap-2 transition-colors"
+                      >
+                        <Eye size={20} />
+                        Visualizza Dettagli
+                      </button>
+                    </div>
                   </div>
                 </div>
-                
-                {/* Photo information */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Foto Disponibili</label>
-                  <div className="flex space-x-4">
-                    {selectedRecord.fotO_SUPERIORE && (
-                      <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">Foto Superiore</span>
-                    )}
-                    {selectedRecord.fotO_FRONTALE && (
-                      <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">Foto Frontale</span>
-                    )}
-                    {selectedRecord.fotO_BOX && (
-                      <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">Foto Box</span>
-                    )}
-                    {!selectedRecord.fotO_SUPERIORE && !selectedRecord.fotO_FRONTALE && !selectedRecord.fotO_BOX && (
-                      <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded text-xs">Nessuna foto disponibile</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-6 flex justify-end">
-                <button
-                  onClick={() => setSelectedRecord(null)}
-                  className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
-                >
-                  Chiudi
-                </button>
-              </div>
-            </div>
+              );
+            })}
           </div>
         </div>
       )}
+
+      {/* Details Modal */}
+      <Modal
+        open={modalOpen}
+        title="Dettagli Acquisizione Real-time"
+        size="2xl"
+        className="max-w-6xl mx-auto"
+        footer={
+          <button
+            type="button"
+            className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+            onClick={handleCloseModal}
+          >
+            Chiudi
+          </button>
+        }
+      >
+        {selectedRecord && (
+          <div className="space-y-4">
+            {/* Compact Header with Status */}
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-3 rounded-lg border border-blue-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div>
+                    <h3 className="text-base font-bold text-gray-900">Acquisizione #{selectedRecord.id}</h3>
+                    <p className="text-xs text-gray-600">{formatTimestamp(selectedRecord.dT_INS)}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div
+                      className={`w-5 h-5 rounded-full flex items-center justify-center text-white font-bold text-xs ${selectedRecord.esitO_CQ_ARTICOLO === null || selectedRecord.esitO_CQ_ARTICOLO === undefined
+                        ? 'bg-gray-400'
+                        : selectedRecord.esitO_CQ_ARTICOLO
+                          ? 'bg-green-500'
+                          : 'bg-red-500'
+                        }`}
+                    >
+                      {selectedRecord.esitO_CQ_ARTICOLO === null || selectedRecord.esitO_CQ_ARTICOLO === undefined
+                        ? '-'
+                        : selectedRecord.esitO_CQ_ARTICOLO
+                          ? '✓'
+                          : '✗'
+                      }
+                    </div>
+                    <span className="text-sm font-bold">
+                      {selectedRecord.esitO_CQ_ARTICOLO === null || selectedRecord.esitO_CQ_ARTICOLO === undefined
+                        ? 'NON TESTATO'
+                        : selectedRecord.esitO_CQ_ARTICOLO
+                          ? 'APPROVATO'
+                          : 'RESPINTO'
+                      }
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 text-xs text-gray-600">
+                  <Activity className="w-3 h-3" />
+                  <span>Real-time</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Main Content - Compact Layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* Product Information */}
+              <div className="bg-white border border-gray-200 rounded-lg p-3">
+                <h4 className="text-sm font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                  <Package className="w-4 h-4 text-blue-500" />
+                  Informazioni Prodotto
+                </h4>
+                <div className="space-y-2">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Codice Articolo</label>
+                    <div className="bg-gray-50 p-2 rounded">
+                      <p className="text-sm font-semibold text-gray-900">{selectedRecord.codicE_ARTICOLO || 'N/A'}</p>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Codice Ordine</label>
+                    <div className="bg-gray-50 p-2 rounded">
+                      <p className="text-sm font-semibold text-gray-900">{selectedRecord.codicE_ORDINE || 'N/A'}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            
+
+<div className="bg-white border border-gray-200 rounded-lg p-3">
+  <h4 className="text-sm font-semibold text-gray-800 mb-2 flex items-center gap-2">
+    <Camera className="w-4 h-4 text-blue-500" />
+    Foto
+  </h4>
+  <div className="space-y-4">
+    <div>
+      <label className="block text-xs font-medium text-gray-600 mb-1">Foto Superiore</label>
+      <div className="bg-gray-50 p-2 rounded">
+        {selectedRecord.fotO_SUPERIORE ? (
+          <img 
+            src={formatImageUrl(selectedRecord.fotO_SUPERIORE)} 
+            alt="Foto Superiore"
+            className="w-full h-40 object-cover rounded border"
+            onError={(e) => {
+              console.log('Image failed to load:', e.target.src);
+              console.log('Original path:', selectedRecord.fotO_SUPERIORE);
+              e.target.style.display = 'none';
+              e.target.nextSibling.style.display = 'flex';
+            }}
+          />
+        ) : null}
+        <div className="hidden items-center justify-center h-40 text-gray-500 text-sm bg-gray-100 rounded border">
+          <div className="text-center">
+            <Camera className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+            <p>Immagine non disponibile</p>
+            <p className="text-xs mt-1">Path: {selectedRecord.fotO_SUPERIORE}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <label className="block text-xs font-medium text-gray-600 mb-1">Foto Frontale</label>
+      <div className="bg-gray-50 p-2 rounded">
+        {selectedRecord.fotO_FRONTALE ? (
+          <img 
+            src={formatImageUrl(selectedRecord.fotO_FRONTALE)} 
+            alt="Foto Frontale"
+            className="w-full h-40 object-cover rounded border"
+            onError={(e) => {
+              console.log('Image failed to load:', e.target.src);
+              console.log('Original path:', selectedRecord.fotO_FRONTALE);
+              e.target.style.display = 'none';
+              e.target.nextSibling.style.display = 'flex';
+            }}
+          />
+        ) : null}
+        <div className="hidden items-center justify-center h-40 text-gray-500 text-sm bg-gray-100 rounded border">
+          <div className="text-center">
+            <Camera className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+            <p>Immagine non disponibile</p>
+            <p className="text-xs mt-1">Path: {selectedRecord.fotO_FRONTALE}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+              {/* Quality Control 
+              <div className="bg-white border border-gray-200 rounded-lg p-3">
+                <h4 className="text-sm font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  Controllo Qualità
+                </h4>
+                <div className="space-y-2">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Abilita CQ</label>
+                    <div className="bg-gray-50 p-2 rounded">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-3 h-3 rounded-full ${selectedRecord.abilitA_CQ ? 'bg-green-500' : 'bg-red-500'
+                          }`} />
+                        <p className="text-sm font-semibold text-gray-900">
+                          {selectedRecord.abilitA_CQ !== null ? (selectedRecord.abilitA_CQ ? 'Sì' : 'No') : 'N/A'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Esito CQ</label>
+                    <div className={`p-2 rounded border ${selectedRecord.esitO_CQ_ARTICOLO === null || selectedRecord.esitO_CQ_ARTICOLO === undefined
+                        ? 'bg-gray-50 border-gray-300'
+                        : selectedRecord.esitO_CQ_ARTICOLO
+                          ? 'bg-green-50 border-green-300'
+                          : 'bg-red-50 border-red-300'
+                      }`}>
+                      <p className="text-sm font-semibold text-gray-900">
+                        {selectedRecord.esitO_CQ_ARTICOLO === null || selectedRecord.esitO_CQ_ARTICOLO === undefined
+                          ? 'Non Testato'
+                          : selectedRecord.esitO_CQ_ARTICOLO
+                            ? 'Approvato'
+                            : 'Respinto'
+                        }
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>*/}
+            </div>
+
+            {/* Technical Details - Compact Grid 
+            <div className="bg-white border border-gray-200 rounded-lg p-3">
+              <h4 className="text-sm font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                <Hash className="w-4 h-4 text-purple-500" />
+                Dettagli Tecnici
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div className="bg-gray-50 p-2 rounded">
+                  <label className="block text-xs font-medium text-gray-600 mb-1">ID Record</label>
+                  <p className="text-sm font-semibold text-gray-900">{selectedRecord.id || 'N/A'}</p>
+                </div>
+
+                <div className="bg-gray-50 p-2 rounded">
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Timestamp</label>
+                  <p className="text-xs font-semibold text-gray-900">{formatTimestamp(selectedRecord.dT_INS)}</p>
+                </div>
+
+                {/* Dynamic fields for any additional properties 
+                {Object.entries(selectedRecord).map(([key, value]) => {
+                  // Skip already displayed fields
+                  if (['id', 'dT_INS', 'codicE_ARTICOLO', 'codicE_ORDINE', 'abilitA_CQ', 'esitO_CQ_ARTICOLO'].includes(key)) {
+                    return null;
+                  }
+
+                  // Create better field labels
+                  const getFieldLabel = (fieldKey) => {
+                    const fieldMap = {
+                      'coD_LINEA': 'Codice Linea',
+                      'coD_POSTAZIONE': 'Codice Postazione',
+                      'foT_O_SUPERIORE': 'Foto Superiore',
+                      'foT_O_FRONTALE': 'Foto Frontale',
+                      'foT_O_BOX': 'Foto Box',
+                      'esiT_O_CQ_BOX': 'Esito CQ Box',
+                      'confidenZ_A_CQ_BOX': 'Confidenza CQ Box',
+                      'scostamenT_O_CQ_ART_ICOLO': 'Scostamento CQ Articolo',
+                      'dT_AGG': 'Data Aggiornamento'
+                    };
+
+                    if (fieldMap[fieldKey]) {
+                      return fieldMap[fieldKey];
+                    }
+
+                    // Fallback: clean up the field name
+                    return fieldKey
+                      .replace(/_/g, ' ')
+                      .replace(/([A-Z])/g, ' $1')
+                      .replace(/\s+/g, ' ')
+                      .trim()
+                      .toLowerCase()
+                      .split(' ')
+                      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                      .join(' ');
+                  };
+
+                  return (
+                    <div key={key} className="bg-gray-50 p-2 rounded">
+                      <label className="block text-xs font-medium text-gray-600 mb-1">
+                        {getFieldLabel(key)}
+                      </label>
+                      <p className="text-xs font-semibold text-gray-900 break-all">
+                        {value !== null && value !== undefined ? String(value) : 'N/A'}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div> Grid */}
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

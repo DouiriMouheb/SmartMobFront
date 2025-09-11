@@ -1,7 +1,7 @@
 import toast from 'react-hot-toast';
 
 // Updated API base URL to match the correct server
-const API_BASE_URL = 'https://localhost:7052';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ;
 
 class AcquisizioniService {
   constructor() {

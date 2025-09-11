@@ -10,7 +10,7 @@ const Table = ({ data, updateRecord, refreshRecords }) => {
     const [selectedRow, setSelectedRow] = useState(null);
     const [editMode, setEditMode] = useState(false);
     const [createMode, setCreateMode] = useState(false);
-    const [form, setForm] = useState({ descrizione: '', valore: '', codLineaProd: '', tipologia: 0 });
+    const [form, setForm] = useState({ descrizione: '', valore: '', codLineaProd: '', codPostazione: '', tipologia: 0 });
     const [saving, setSaving] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -45,6 +45,7 @@ const Table = ({ data, updateRecord, refreshRecords }) => {
                 return (
                     row.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                     row.codLineaProd?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    row.codPostazione?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                     row.valore?.toString().toLowerCase().includes(searchTerm.toLowerCase()) ||
                     formattedDate.includes(searchTerm) ||
                     tipologie.find(t => t.idTipologia === row.tipologia)?.desSignificato?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -65,6 +66,10 @@ const Table = ({ data, updateRecord, refreshRecords }) => {
                     case 'codLineaProd':
                         aValue = a.codLineaProd?.toLowerCase() || '';
                         bValue = b.codLineaProd?.toLowerCase() || '';
+                        break;
+                    case 'codPostazione':
+                        aValue = a.codPostazione?.toLowerCase() || '';
+                        bValue = b.codPostazione?.toLowerCase() || '';
                         break;
                     case 'tipologia':
                         aValue = tipologie.find(t => t.idTipologia === a.tipologia)?.desSignificato?.toLowerCase() || '';
@@ -149,6 +154,7 @@ const Table = ({ data, updateRecord, refreshRecords }) => {
             descrizione: row.description || '',
             valore: row.value || row.valore || '',
             codLineaProd: row.codLineaProd || '',
+            codPostazione: row.codPostazione || '',
             tipologia: row.tipologia || 0
         });
         setEditMode(false);
@@ -165,14 +171,14 @@ const Table = ({ data, updateRecord, refreshRecords }) => {
         setCreateMode(false);
         setSelectedRow(null);
         setShowDeleteConfirm(false);
-        setForm({ descrizione: '', valore: '', codLineaProd: '', tipologia: 0 });
+        setForm({ descrizione: '', valore: '', codLineaProd: '', codPostazione: '', tipologia: 0 });
     };
 
     const handleCreateClick = () => {
         setCreateMode(true);
         setEditMode(false);
         setSelectedRow(null);
-        setForm({ descrizione: '', valore: '', codLineaProd: '', tipologia: 0 });
+        setForm({ descrizione: '', valore: '', codLineaProd: '', codPostazione: '', tipologia: 0 });
         setModalOpen(true);
     };
 
@@ -207,6 +213,8 @@ const Table = ({ data, updateRecord, refreshRecords }) => {
                form.valore.trim() !== '' && 
                form.codLineaProd.trim() !== '' && 
                form.codLineaProd.trim().length <= 18 &&
+               form.codPostazione.trim() !== '' && 
+               form.codPostazione.trim().length <= 50 &&
                form.tipologia !== '' && 
                form.tipologia !== 0;
     };
@@ -216,6 +224,8 @@ const Table = ({ data, updateRecord, refreshRecords }) => {
                form.valore.trim() !== '' && 
                form.codLineaProd.trim() !== '' && 
                form.codLineaProd.trim().length <= 18 &&
+               form.codPostazione.trim() !== '' && 
+               form.codPostazione.trim().length <= 50 &&
                form.tipologia !== '' && 
                form.tipologia !== 0;
     };
@@ -350,7 +360,7 @@ const Table = ({ data, updateRecord, refreshRecords }) => {
                             type="text"
                             value={searchTerm}
                             onChange={(e) => handleSearchChange(e.target.value)}
-                            placeholder="Cerca per descrizione, codice linea, valore, data o tipologia..."
+                            placeholder="Cerca per descrizione, codice linea, codice postazione, valore, data o tipologia..."
                             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                         />
                     </div>
@@ -373,6 +383,9 @@ const Table = ({ data, updateRecord, refreshRecords }) => {
                             <SortableHeader field="codLineaProd" className="text-center">
                                 Cod. Linea Prod
                             </SortableHeader>
+                            <SortableHeader field="codPostazione" className="text-center">
+                                Cod. Postazione
+                            </SortableHeader>
                             <SortableHeader field="tipologia" className="text-center">
                             Tipologia
                         </SortableHeader>
@@ -384,7 +397,7 @@ const Table = ({ data, updateRecord, refreshRecords }) => {
                 <tbody>
                     {paginatedData.length === 0 ? (
                         <tr>
-                            <td colSpan="4" className="px-4 py-8 text-center text-gray-500">
+                            <td colSpan="5" className="px-4 py-8 text-center text-gray-500">
                                 <div className="flex flex-col items-center gap-2">
                                     {searchTerm ? (
                                         <>
@@ -411,6 +424,11 @@ const Table = ({ data, updateRecord, refreshRecords }) => {
                                 <td className="px-4 py-2 border-b text-center">
                                     <span className="bg-gray-600 text-white px-2 py-1 rounded-md text-sm font-medium">
                                         {row.codLineaProd}
+                                    </span>
+                                </td>
+                                <td className="px-4 py-2 border-b text-center">
+                                    <span className="bg-gray-600 text-white px-2 py-1 rounded-md text-sm font-medium">
+                                        {row.codPostazione}
                                     </span>
                                 </td>
                                 <td className="px-4 py-2 border-b text-left">
@@ -552,6 +570,27 @@ const Table = ({ data, updateRecord, refreshRecords }) => {
                             </div>
                         </div>
                         
+                        {/* Cod. Postazione */}
+                        <div>
+                            <label className="font-semibold block mb-1">Cod. Postazione: <span className="text-red-500">*</span></label>
+                            <input
+                                className={`border px-2 py-1 rounded w-full ${
+                                    form.codPostazione.length > 50 ? 'border-red-500' : 'border-gray-300'
+                                }`}
+                                value={form.codPostazione}
+                                onChange={e => setForm(f => ({ ...f, codPostazione: e.target.value }))}
+                                required
+                                placeholder="Inserisci codice postazione"
+                                maxLength={50}
+                            />
+                            <div className="text-xs text-gray-500 mt-1">
+                                {form.codPostazione.length}/50 caratteri
+                                {form.codPostazione.length > 50 && (
+                                    <span className="text-red-500 ml-2">Massimo 50 caratteri</span>
+                                )}
+                            </div>
+                        </div>
+                        
                         {/* Tipologia */}
                         <div>
                             <label className="font-semibold block mb-1">Tipologia: <span className="text-red-500">*</span></label>
@@ -578,6 +617,12 @@ const Table = ({ data, updateRecord, refreshRecords }) => {
                                 <span className="font-semibold">Cod. Linea:</span>
                                 <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-md text-sm font-medium">
                                     {selectedRow.codLineaProd}
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className="font-semibold">Cod. Postazione:</span>
+                                <span className="bg-green-100 text-green-800 px-2 py-1 rounded-md text-sm font-medium">
+                                    {selectedRow.codPostazione}
                                 </span>
                             </div>
                             <div><span className="font-semibold">Data:</span> {formatDate(selectedRow.dateAdded)}</div>
@@ -626,6 +671,27 @@ const Table = ({ data, updateRecord, refreshRecords }) => {
                                 </div>
                             </div>
                             <div><span className="font-semibold">Data:</span> {formatDate(selectedRow.dateAdded)}</div>
+                        </div>
+                        
+                        {/* Cod. Postazione */}
+                        <div>
+                            <label className="font-semibold block mb-1">Cod. Postazione: <span className="text-red-500">*</span></label>
+                            <input
+                                className={`border px-2 py-1 rounded w-full ${
+                                    form.codPostazione.length > 50 ? 'border-red-500' : 'border-gray-300'
+                                }`}
+                                value={form.codPostazione}
+                                onChange={e => setForm(f => ({ ...f, codPostazione: e.target.value }))}
+                                required
+                                placeholder="Inserisci codice postazione"
+                                maxLength={50}
+                            />
+                            <div className="text-xs text-gray-500 mt-1">
+                                {form.codPostazione.length}/50 caratteri
+                                {form.codPostazione.length > 50 && (
+                                    <span className="text-red-500 ml-2">Massimo 50 caratteri</span>
+                                )}
+                            </div>
                         </div>
                         
                         {/* Description */}
