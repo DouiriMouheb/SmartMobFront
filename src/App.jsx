@@ -9,6 +9,7 @@ import ControlloQualita from './pages/ControlloQualita';
 import DispositiviMultimediali from './pages/DispositiviMultimediali';
 import RealtimeControlloQualita from './pages/RealtimeControlloQualita';
 import Acquisizioni from './pages/Acquisizioni';
+import RealtimeLatestSingle from './pages/RealtimeLatestSingle';
 
 
 const App = () => (
@@ -32,6 +33,7 @@ const App = () => (
         <Route path="/controllo-qualita" element={<ControlloQualita />} />
         <Route path="/dispositivi-multimediali" element={<DispositiviMultimediali />} />
         <Route path="/realtime-controllo" element={<RealtimeControlloQualita />} />
+        <Route path="/realtime-latest" element={<RealtimeLatestSingle />} />
         
       </Routes>
     </MainLayout>

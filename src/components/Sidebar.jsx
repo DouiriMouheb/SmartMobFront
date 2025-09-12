@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, Home, Table, X ,ShieldCheck, Monitor, Activity, Database} from 'lucide-react';
+import { Menu, Home, Table, X ,ShieldCheck, Monitor, Activity, Database, Radio} from 'lucide-react';
 
 const navItems = [
   { to: '/', label: 'Home', icon: Home },
@@ -9,6 +9,7 @@ const navItems = [
   { to: '/controllo-qualita', label: 'Controllo Qualita', icon: ShieldCheck },
   { to: '/dispositivi-multimediali', label: 'Dispositivi Multimediali', icon: Monitor },
   { to: '/realtime-controllo', label: 'Real-time Controllo', icon: Activity },
+  { to: '/realtime-latest', label: 'Monitor Real-time', icon: Radio },
 
 ];
 
