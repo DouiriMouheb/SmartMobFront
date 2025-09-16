@@ -5,10 +5,10 @@ import { Menu, Home, Table, X ,ShieldCheck, Monitor, Activity, Database, Radio} 
 const navItems = [
   { to: '/', label: 'Home', icon: Home },
   { to: '/settings', label: 'Impostazioni', icon: Table },
-    { to: '/acquisizioni', label: 'Acquisizioni', icon: Database },
+  { to: '/acquisizioni', label: 'Acquisizioni', icon: Database },
   { to: '/controllo-qualita', label: 'Controllo Qualita', icon: ShieldCheck },
   { to: '/dispositivi-multimediali', label: 'Dispositivi Multimediali', icon: Monitor },
-  { to: '/realtime-controllo', label: 'Real-time Controllo', icon: Activity },
+ // { to: '/realtime-controllo', label: 'Real-time Controllo', icon: Activity },
   { to: '/realtime-latest', label: 'Monitor Real-time', icon: Radio },
 
 ];
