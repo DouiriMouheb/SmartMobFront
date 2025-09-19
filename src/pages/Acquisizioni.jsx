@@ -75,7 +75,7 @@ const Acquisizioni = () => {
       <div className="mb-6 sm:mb-8">
         <div className="flex items-center gap-2 sm:gap-3 mb-2">
           <Database className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600" />
-          <h1 className="text-xl sm:text-3xl font-bold text-gray-900">Filtri di Acquisizione</h1>
+          <h1 className="text-xl sm:text-3xl font-bold text-gray-900">Acquisizione</h1>
         </div>
         <p className="text-sm sm:text-base text-gray-600 p-2">Gestisci le acquisizioni del sistema</p>
 
@@ -168,7 +168,7 @@ const Acquisizioni = () => {
 
       {/* Acquisizioni Results Table */}
       {selectedLinea && selectedPostazione && (
-        <div className="mt-4 sm:mt-6 bg-white rounded-lg shadow-md p-3 sm:p-6">
+        <div className="mt-2 sm:mt-6 bg-white rounded-lg shadow-md  sm:p-6">
           <div className="flex items-center gap-2 mb-4">
             <Package className="w-5 h-5 text-blue-500" />
             <h2 className="text-lg sm:text-xl font-semibold text-gray-800">

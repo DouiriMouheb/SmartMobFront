@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Radio, 
-  ChevronDown, 
-  Loader2, 
-  AlertCircle, 
-  Calendar, 
-  Package, 
-  Eye, 
+import {
+  Radio,
+  ChevronDown,
+  Loader2,
+  AlertCircle,
+  Calendar,
+  Package,
+  Eye,
   Clock,
   CheckCircle,
   XCircle,
@@ -38,11 +38,11 @@ const RealtimeLatestSingle = () => {
       setLoading(true);
       setError(null);
 
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://localhost:7052';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
       const url = `${API_BASE_URL}/api/acquisizioni/latest-single/line/${selectedLinea}/station/${selectedPostazione}`;
-      
+
       const response = await fetch(url);
-      
+
       if (response.ok) {
         const data = await response.json();
         setLatestData(data);
@@ -64,10 +64,10 @@ const RealtimeLatestSingle = () => {
   useEffect(() => {
     if (selectedLinea && selectedPostazione) {
       fetchLatestData();
-      
+
       // Start polling every 3 seconds
       const interval = setInterval(fetchLatestData, 3000);
-      
+
       return () => {
         clearInterval(interval);
       };
@@ -97,38 +97,10 @@ const RealtimeLatestSingle = () => {
     });
   };
 
-  // Helper function to format image URLs - matching RealtimeControlloQualita
-  const formatImageUrl = (imageUrl) => {
-    if (!imageUrl) return null;
-    
-    // If it's already a proper web URL, return as is
-    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-      return imageUrl;
-    }
-    
-    // If it starts with //, add https:
-    if (imageUrl.startsWith('//')) {
-      return `https:${imageUrl}`;
-    }
-    
-    // If it's a relative path, assume it's from your domain
-    if (imageUrl.startsWith('/')) {
-      return imageUrl;
-    }
-    
-    // Handle database format like "192.168.1.90/public/Canon%20EOS%20R100/100CANON/IMG_0317.JPG"
-    // Use HTTP protocol for network file access (assumes the server has HTTP file sharing enabled)
-    if (imageUrl.match(/^\d+\.\d+\.\d+\.\d+\//) || (imageUrl.includes('.') && !imageUrl.includes(' '))) {
-      return `http://${imageUrl}`;
-    }
-    
-    return imageUrl;
-  };
-
-  // Simple function to open image URL in new window - matching RealtimeControlloQualita
+  // Simple function to open image URL in new window
   const handleImageOpen = (imageUrl) => {
     if (imageUrl) {
-      window.open(formatImageUrl(imageUrl), '_blank');
+      window.open(imageUrl, '_blank');
     }
   };
 
@@ -145,52 +117,24 @@ const RealtimeLatestSingle = () => {
     if (esito === null || esito === undefined) {
       return { color: 'bg-gray-400', text: 'NON TESTATO', icon: '-' };
     }
-    return esito 
+    return esito
       ? { color: 'bg-green-500', text: 'APPROVATO', icon: '✓' }
       : { color: 'bg-red-500', text: 'RESPINTO', icon: '✗' };
   };
 
   return (
-    <div className="space-y-6">
+    <div className="p-3 sm:p-6">
       {/* Header */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-3 rounded-lg">
-            <Radio className="w-8 h-8 text-white" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-800">Monitoraggio Real-time</h1>
-            <p className="text-gray-600 mt-1">Seleziona linea e postazione per visualizzare l'ultima acquisizione</p>
-          </div>
+
+      <div className="mb-6 sm:mb-8">
+        <div className="flex items-center gap-2 sm:gap-3 mb-2">
+          <Radio className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600" />
+          <h1 className="text-xl sm:text-3xl font-bold text-gray-900">Monitoraggio Real-time</h1>
         </div>
-      </div>
-
-      {/* Dropdown Selection Only */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">Selezione Linea e Postazione</h2>
-        
-        {/* Loading State for dropdowns */}
-        {dropdownLoading && (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-            <span className="ml-2 text-gray-600">Caricamento opzioni...</span>
-          </div>
-        )}
-
-        {/* Error State for dropdowns */}
-        {dropdownError && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-            <div className="flex items-center">
-              <AlertCircle className="w-5 h-5 text-red-500 mr-2" />
-              <span className="text-red-700">Errore nel caricamento delle opzioni: {dropdownError}</span>
-            </div>
-          </div>
-        )}
 
         {/* Dropdowns */}
         {!dropdownLoading && !dropdownError && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
-            {/* Linea Dropdown */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 max-w-4xl">         
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700">
                 Linea di Produzione
@@ -222,17 +166,16 @@ const RealtimeLatestSingle = () => {
                   value={selectedPostazione}
                   onChange={(e) => setSelectedPostazione(e.target.value)}
                   disabled={!selectedLinea || postazioni.length === 0}
-                  className={`w-full px-4 py-3 bg-white border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 appearance-none cursor-pointer text-gray-900 ${
-                    !selectedLinea || postazioni.length === 0 
-                      ? 'bg-gray-100 cursor-not-allowed opacity-50' 
-                      : ''
-                  }`}
+                  className={`w-full px-4 py-3 bg-white border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 appearance-none cursor-pointer text-gray-900 ${!selectedLinea || postazioni.length === 0
+                    ? 'bg-gray-100 cursor-not-allowed opacity-50'
+                    : ''
+                    }`}
                 >
                   <option value="">
-                    {!selectedLinea 
-                      ? 'Prima seleziona una linea...' 
-                      : postazioni.length === 0 
-                        ? 'Nessuna postazione disponibile' 
+                    {!selectedLinea
+                      ? 'Prima seleziona una linea...'
+                      : postazioni.length === 0
+                        ? 'Nessuna postazione disponibile'
                         : 'Seleziona una postazione...'
                     }
                   </option>
@@ -248,6 +191,27 @@ const RealtimeLatestSingle = () => {
           </div>
         )}
       </div>
+
+      {/* Loading State for dropdowns */}
+      {dropdownLoading && (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+          <span className="ml-2 text-gray-600">Caricamento opzioni...</span>
+        </div>
+      )}
+
+      {/* Error State for dropdowns */}
+      {dropdownError && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center">
+            <AlertCircle className="w-5 h-5 text-red-500 mr-2" />
+            <span className="text-red-700">Errore nel caricamento delle opzioni: {dropdownError}</span>
+          </div>
+        </div>
+      )}
+
+
+
 
       {/* Data Display Section - Same layout as Real-time Controllo */}
       {selectedLinea && selectedPostazione && (
@@ -281,11 +245,11 @@ const RealtimeLatestSingle = () => {
 
           {/* Data display - matching Real-time Controllo layout */}
           {latestData && (
-            <div className="p-8">
-              <div className="bg-white border-2 rounded-xl p-8 border-gray-200">
+            
+              <div className="bg-white border-2 rounded-xl p-4 border-gray-200">
                 <div className="flex flex-col lg:flex-row items-center justify-center gap-8">
                   {/* Left side - Info fields */}
-                  <div className="flex-shrink-0 lg:w-2/5 space-y-6">
+                  <div className="flex-shrink-0 lg:w-2/4 space-y-6">
                     {/* Connection status */}
                     <div className="bg-green-100 border border-green-200 rounded-lg p-3">
                       <div className="flex items-center gap-2">
@@ -342,7 +306,7 @@ const RealtimeLatestSingle = () => {
                   </div>
 
                   {/* Right side - Large Quality Status Card */}
-                  <div className="flex-grow flex flex-col items-center justify-center lg:w-3/5">
+                  <div className="flex-grow flex flex-col items-center justify-center lg:w-2/4">
                     <label className="block text-xl font-bold text-gray-700 mb-4 text-center">
                       Esito CQ Articolo
                     </label>
@@ -367,7 +331,7 @@ const RealtimeLatestSingle = () => {
                   </div>
                 </div>
               </div>
-            </div>
+           
           )}
         </div>
       )}
@@ -376,7 +340,7 @@ const RealtimeLatestSingle = () => {
       <Modal
         open={isModalOpen}
         title="Dettagli Acquisizione Real-time"
-        size="2xl"
+        size="xl"
         className="max-w-6xl mx-auto"
         footer={
           <button
@@ -458,8 +422,8 @@ const RealtimeLatestSingle = () => {
                     <div className="bg-gray-50 p-2 rounded">
                       {latestData.fotO_SUPERIORE ? (
                         <div className="relative group">
-                          <img 
-                            src={formatImageUrl(latestData.fotO_SUPERIORE)} 
+                          <img
+                            src={latestData.fotO_SUPERIORE}
                             alt="Foto Superiore"
                             className="w-full h-40 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
                             onClick={() => handleImageOpen(latestData.fotO_SUPERIORE)}
@@ -471,7 +435,7 @@ const RealtimeLatestSingle = () => {
                             }}
                           />
                           <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black bg-opacity-50 rounded cursor-pointer"
-                               onClick={() => handleImageOpen(latestData.fotO_SUPERIORE)}>
+                            onClick={() => handleImageOpen(latestData.fotO_SUPERIORE)}>
                             <Eye className="w-8 h-8 text-white" />
                           </div>
                           <button
@@ -497,8 +461,8 @@ const RealtimeLatestSingle = () => {
                     <div className="bg-gray-50 p-2 rounded">
                       {latestData.fotO_FRONTALE ? (
                         <div className="relative group">
-                          <img 
-                            src={formatImageUrl(latestData.fotO_FRONTALE)} 
+                          <img
+                            src={latestData.fotO_FRONTALE}
                             alt="Foto Frontale"
                             className="w-full h-40 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
                             onClick={() => handleImageOpen(latestData.fotO_FRONTALE)}
@@ -510,7 +474,7 @@ const RealtimeLatestSingle = () => {
                             }}
                           />
                           <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black bg-opacity-50 rounded cursor-pointer"
-                               onClick={() => handleImageOpen(latestData.fotO_FRONTALE)}>
+                            onClick={() => handleImageOpen(latestData.fotO_FRONTALE)}>
                             <Eye className="w-8 h-8 text-white" />
                           </div>
                           <button
