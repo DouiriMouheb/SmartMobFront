@@ -1,4 +1,35 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://localhost:7052';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5065';
+
+const extractSinglePayload = (payload) => {
+  if (payload && typeof payload === 'object' && payload.data !== undefined) {
+    return payload.data;
+  }
+
+  return payload ?? null;
+};
+
+const normalizeLatestSingleRecord = (item) => {
+  if (!item || typeof item !== 'object') {
+    return null;
+  }
+
+  const codiceArticolo = item.codiceArticolo ?? item.codicE_ARTICOLO ?? '';
+  const codiceOrdine = item.codiceOrdine ?? item.codicE_ORDINE ?? '';
+  const abilitaCq = item.abilitaCq ?? item.abilitA_CQ ?? null;
+  const esitoCqArticolo = item.esitoCqArticolo ?? item.esitO_CQ_ARTICOLO ?? null;
+  const scostamentoCqArticolo = item.scostamentoCqArticolo ?? item.scostamentO_CQ_ARTICOLO ?? 0;
+  const dtIns = item.dtIns ?? item.dT_INS ?? null;
+
+  return {
+    ...item,
+    codicE_ARTICOLO: codiceArticolo,
+    codicE_ORDINE: codiceOrdine,
+    abilitA_CQ: abilitaCq,
+    esitO_CQ_ARTICOLO: esitoCqArticolo,
+    scostamentO_CQ_ARTICOLO: scostamentoCqArticolo,
+    dT_INS: dtIns,
+  };
+};
 
 export const fetchLatestSingleAcquisition = async (codLinea, codPostazione) => {
   console.log('Service function called with:', codLinea, codPostazione);
@@ -36,7 +67,8 @@ export const fetchLatestSingleAcquisition = async (codLinea, codPostazione) => {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const data = await response.json();
+    const payload = await response.json();
+    const data = normalizeLatestSingleRecord(extractSinglePayload(payload));
     console.log('Response data:', data);
     
     return {

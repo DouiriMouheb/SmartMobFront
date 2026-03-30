@@ -1,6 +1,52 @@
 import { useState, useEffect } from 'react';
 import { fetchLineePostazioni } from '../services/lineePostazioniService';
 
+const splitPostazioni = (value) => {
+  if (Array.isArray(value)) {
+    return value
+      .flatMap((item) => String(item ?? '').split(','))
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  if (typeof value === 'string') {
+    return value
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  return [];
+};
+
+const normalizeLineePostazioni = (payload) => {
+  const rawItems = Array.isArray(payload)
+    ? payload
+    : Array.isArray(payload?.data)
+      ? payload.data
+      : [];
+
+  const grouped = new Map();
+
+  rawItems.forEach((item) => {
+    const codLineaProd = item?.codLineaProd ?? item?.coD_LINEA_PROD ?? item?.COD_LINEA_PROD;
+    const codPostazioneRaw = item?.codPostazione ?? item?.coD_POSTAZIONE ?? item?.COD_POSTAZIONE;
+
+    if (!codLineaProd) {
+      return;
+    }
+
+    const current = grouped.get(codLineaProd) || new Set();
+    splitPostazioni(codPostazioneRaw).forEach((postazione) => current.add(postazione));
+    grouped.set(codLineaProd, current);
+  });
+
+  return Array.from(grouped.entries()).map(([codLineaProd, postazioni]) => ({
+    codLineaProd,
+    codPostazioni: Array.from(postazioni)
+  }));
+};
+
 export const useLineePostazioni = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -14,7 +60,7 @@ export const useLineePostazioni = () => {
       const result = await fetchLineePostazioni();
       
       if (result.success) {
-        setData(result.data);
+        setData(normalizeLineePostazioni(result.data));
       } else {
         setError(result.message);
       }
@@ -33,27 +79,17 @@ export const useLineePostazioni = () => {
   // Helper function to get unique linee
   const getLinee = () => {
     return data.map(item => ({
-      value: item.coD_LINEA_PROD,
-      label: item.coD_LINEA_PROD
+      value: item.codLineaProd,
+      label: item.codLineaProd
     }));
   };
 
   // Helper function to get postazioni for a specific linea
   const getPostazioniForLinea = (selectedLinea) => {
-    const lineaData = data.find(item => item.coD_LINEA_PROD === selectedLinea);
-    if (!lineaData || !lineaData.coD_POSTAZIONE) return [];
-    
-    // Handle the case where postazioni are comma-separated strings
-    const allPostazioni = [];
-    lineaData.coD_POSTAZIONE.forEach(postazioneString => {
-      // Split by comma in case multiple postazioni are in one string
-      const postazioni = postazioneString.split(',').map(p => p.trim());
-      allPostazioni.push(...postazioni);
-    });
-    
-    // Remove duplicates and convert to dropdown format
-    const uniquePostazioni = [...new Set(allPostazioni)];
-    return uniquePostazioni.map(postazione => ({
+    const lineaData = data.find(item => item.codLineaProd === selectedLinea);
+    if (!lineaData || !Array.isArray(lineaData.codPostazioni)) return [];
+
+    return lineaData.codPostazioni.map(postazione => ({
       value: postazione,
       label: postazione
     }));

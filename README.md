@@ -34,7 +34,7 @@ Edit your `.env` file:
 
 ```bash
 # Required: Your API base URL
-VITE_API_BASE_URL=https://localhost:7052
+VITE_API_BASE_URL=http://localhost:5065/
 ```
 
 **Important**: Environment variables are built into the application at build time. If you change your `.env` file, you must rebuild:

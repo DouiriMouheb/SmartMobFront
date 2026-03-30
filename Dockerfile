@@ -13,7 +13,7 @@ RUN npm ci
 COPY . .
 
 # Accept build argument for API URL
-ARG VITE_API_BASE_URL=https://localhost:7052
+ARG VITE_API_BASE_URL=http://localhost:5065
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 
 # Build the app

@@ -2,6 +2,12 @@ import { useEffect, useState } from 'react';
 import { fetchDatabaseRecords, updateDatabaseRecord } from '../services/databaseRecordsService';
 import { showSuccess, showError } from '../services/toastService';
 
+const extractArrayPayload = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.data)) return payload.data;
+  return [];
+};
+
 export function useDatabaseRecords() {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -11,9 +17,10 @@ export function useDatabaseRecords() {
     setLoading(true);
     try {
       const res = await fetchDatabaseRecords();
-      setRecords(res.data);
+      setRecords(extractArrayPayload(res));
       setError(null);
     } catch (err) {
+      setRecords([]);
       setError(err);
     } finally {
       setLoading(false);

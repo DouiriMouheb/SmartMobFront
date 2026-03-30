@@ -18,6 +18,29 @@ import {
 import { useLineePostazioni } from '../hooks/useLineePostazioni';
 import Modal from '../components/Modal';
 
+const normalizeLatestSingleRecord = (item) => {
+  if (!item || typeof item !== 'object') {
+    return null;
+  }
+
+  const codiceArticolo = item.codiceArticolo ?? item.codicE_ARTICOLO ?? '';
+  const codiceOrdine = item.codiceOrdine ?? item.codicE_ORDINE ?? '';
+  const abilitaCq = item.abilitaCq ?? item.abilitA_CQ ?? null;
+  const esitoCqArticolo = item.esitoCqArticolo ?? item.esitO_CQ_ARTICOLO ?? null;
+  const scostamentoCqArticolo = item.scostamentoCqArticolo ?? item.scostamentO_CQ_ARTICOLO ?? 0;
+  const dtIns = item.dtIns ?? item.dT_INS ?? null;
+
+  return {
+    ...item,
+    codicE_ARTICOLO: codiceArticolo,
+    codicE_ORDINE: codiceOrdine,
+    abilitA_CQ: abilitaCq,
+    esitO_CQ_ARTICOLO: esitoCqArticolo,
+    scostamentO_CQ_ARTICOLO: scostamentoCqArticolo,
+    dT_INS: dtIns,
+  };
+};
+
 const RealtimeLatestSingle = () => {
   const [selectedLinea, setSelectedLinea] = useState('');
   const [selectedPostazione, setSelectedPostazione] = useState('');
@@ -44,7 +67,11 @@ const RealtimeLatestSingle = () => {
       const response = await fetch(url);
 
       if (response.ok) {
-        const data = await response.json();
+        const payload = await response.json();
+        const rawData = payload && typeof payload === 'object' && payload.data !== undefined
+          ? payload.data
+          : payload;
+        const data = normalizeLatestSingleRecord(rawData);
         setLatestData(data);
         setLastUpdate(new Date());
         setError(null);

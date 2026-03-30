@@ -1,4 +1,33 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://localhost:7052';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5065';
+
+const extractArrayPayload = (payload) => {
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+
+  if (Array.isArray(payload?.data)) {
+    return payload.data;
+  }
+
+  return [];
+};
+
+const normalizeAcquisizioneRecord = (item) => {
+  const codiceArticolo = item?.codiceArticolo ?? item?.codicE_ARTICOLO ?? '';
+  const codiceOrdine = item?.codiceOrdine ?? item?.codicE_ORDINE ?? '';
+  const esitoCqArticolo = item?.esitoCqArticolo ?? item?.esitO_CQ_ARTICOLO ?? null;
+  const scostamentoCqArticolo = item?.scostamentoCqArticolo ?? item?.scostamentO_CQ_ARTICOLO ?? 0;
+  const dtIns = item?.dtIns ?? item?.dT_INS ?? null;
+
+  return {
+    ...item,
+    codicE_ARTICOLO: codiceArticolo,
+    codicE_ORDINE: codiceOrdine,
+    esitO_CQ_ARTICOLO: esitoCqArticolo,
+    scostamentO_CQ_ARTICOLO: scostamentoCqArticolo,
+    dT_INS: dtIns,
+  };
+};
 
 export const fetchAcquisizioniByFilter = async (codLineaProd, codPostazione) => {
   try {
@@ -25,12 +54,13 @@ export const fetchAcquisizioniByFilter = async (codLineaProd, codPostazione) => 
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const data = await response.json();
+    const payload = await response.json();
+    const data = extractArrayPayload(payload).map(normalizeAcquisizioneRecord);
     
     return {
       success: true,
       message: 'Acquisizioni caricate con successo',
-      data: data || []
+      data
     };
   } catch (error) {
     console.error('Error fetching acquisizioni:', error);

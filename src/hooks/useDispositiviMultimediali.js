@@ -2,6 +2,12 @@ import { useEffect, useState } from 'react';
 import { fetchDispositiviMultimedialiRecords, updateDispositiviMultimedialiRecord } from '../services/dispositiviMultimedialiService';
 import { showSuccess, showError } from '../services/toastService';
 
+const extractArrayPayload = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.data)) return payload.data;
+  return [];
+};
+
 export function useDispositiviMultimediali() {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -11,8 +17,8 @@ export function useDispositiviMultimediali() {
     setLoading(true);
     try {
       const res = await fetchDispositiviMultimedialiRecords();
-      if (res.success && res.data) {
-        setRecords(res.data);
+      if (res.success) {
+        setRecords(extractArrayPayload(res.data));
         setError(null);
       } else {
         setRecords([]);

@@ -30,7 +30,10 @@ export const useLatestSingleAcquisitionRealtime = (codLinea, codPostazione, poll
       if (mountedRef.current) {
         if (result.success) {
           console.log('Latest acquisition data received:', result.data);
-          setData(result.data);
+          const normalizedData = result?.data && typeof result.data === 'object' && result.data.data !== undefined
+            ? result.data.data
+            : result.data;
+          setData(normalizedData ?? null);
           setLastUpdate(new Date());
         } else {
           console.log('API returned success=false:', result.message);

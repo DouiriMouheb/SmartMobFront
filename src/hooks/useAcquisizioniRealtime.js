@@ -7,6 +7,12 @@ import acquisizioniService from '../services/acquisizioniService';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ;
 const HUB_URL = `${API_BASE_URL}/hubs/acquisizioni`;
 
+const extractArrayPayload = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.data)) return payload.data;
+  return payload ? [payload] : [];
+};
+
 const useAcquisizioniRealtime = () => {
   const [connection, setConnection] = useState(null);
   const [connectionState, setConnectionState] = useState('Disconnected');
@@ -109,7 +115,7 @@ const useAcquisizioniRealtime = () => {
       console.log('🔄 AcquisizioniUpdated event received:', data);
       console.log('📊 Data type:', typeof data, 'Is Array:', Array.isArray(data));
       try {
-        const newAcquisizioni = Array.isArray(data) ? data : [data];
+        const newAcquisizioni = extractArrayPayload(data);
         console.log('📋 Processing acquisizioni:', newAcquisizioni.length, 'records');
         setAcquisizioni(newAcquisizioni);
         setLastUpdated(new Date().toISOString());
@@ -125,8 +131,8 @@ const useAcquisizioniRealtime = () => {
       console.log('➕ NewAcquisizione event received:', data);
       try {
         setAcquisizioni(prev => {
-          const newRecord = Array.isArray(data) ? data[0] : data;
-          const updated = [newRecord, ...prev];
+          const incoming = extractArrayPayload(data);
+          const updated = [...incoming, ...prev];
           console.log('➕ Added new record, total:', updated.length);
           return updated;
         });

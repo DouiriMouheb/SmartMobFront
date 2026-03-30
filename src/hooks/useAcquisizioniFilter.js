@@ -20,7 +20,13 @@ export const useAcquisizioniFilter = (codLineaProd, codPostazione) => {
       const result = await fetchAcquisizioniByFilter(codLineaProd, codPostazione);
       
       if (result.success) {
-        setData(result.data);
+        const normalizedData = Array.isArray(result.data)
+          ? result.data
+          : Array.isArray(result.data?.data)
+            ? result.data.data
+            : [];
+
+        setData(normalizedData);
       } else {
         setError(result.message);
         setData([]);
