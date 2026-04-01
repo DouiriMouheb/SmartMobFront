@@ -17,29 +17,7 @@ import {
 } from 'lucide-react';
 import { useLineePostazioni } from '../hooks/useLineePostazioni';
 import Modal from '../components/Modal';
-
-const normalizeLatestSingleRecord = (item) => {
-  if (!item || typeof item !== 'object') {
-    return null;
-  }
-
-  const codiceArticolo = item.codiceArticolo ?? item.codicE_ARTICOLO ?? '';
-  const codiceOrdine = item.codiceOrdine ?? item.codicE_ORDINE ?? '';
-  const abilitaCq = item.abilitaCq ?? item.abilitA_CQ ?? null;
-  const esitoCqArticolo = item.esitoCqArticolo ?? item.esitO_CQ_ARTICOLO ?? null;
-  const scostamentoCqArticolo = item.scostamentoCqArticolo ?? item.scostamentO_CQ_ARTICOLO ?? 0;
-  const dtIns = item.dtIns ?? item.dT_INS ?? null;
-
-  return {
-    ...item,
-    codicE_ARTICOLO: codiceArticolo,
-    codicE_ORDINE: codiceOrdine,
-    abilitA_CQ: abilitaCq,
-    esitO_CQ_ARTICOLO: esitoCqArticolo,
-    scostamentO_CQ_ARTICOLO: scostamentoCqArticolo,
-    dT_INS: dtIns,
-  };
-};
+import { normalizeSingleAcquisizione } from '../services/acquisizioniNormalizer';
 
 const RealtimeLatestSingle = () => {
   const [selectedLinea, setSelectedLinea] = useState('');
@@ -68,10 +46,7 @@ const RealtimeLatestSingle = () => {
 
       if (response.ok) {
         const payload = await response.json();
-        const rawData = payload && typeof payload === 'object' && payload.data !== undefined
-          ? payload.data
-          : payload;
-        const data = normalizeLatestSingleRecord(rawData);
+        const data = normalizeSingleAcquisizione(payload);
         setLatestData(data);
         setLastUpdate(new Date());
         setError(null);
@@ -147,6 +122,18 @@ const RealtimeLatestSingle = () => {
     return esito
       ? { color: 'bg-green-500', text: 'APPROVATO', icon: '✓' }
       : { color: 'bg-red-500', text: 'RESPINTO', icon: '✗' };
+  };
+
+  const formatDifferentValue = (value) => {
+    if (value === null || value === undefined) {
+      return 'N/A';
+    }
+
+    if (typeof value === 'boolean') {
+      return value ? 'Si' : 'No';
+    }
+
+    return String(value);
   };
 
   return (
@@ -321,6 +308,32 @@ const RealtimeLatestSingle = () => {
                       </div>
                     </div>
 
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                      <label className="block text-base font-semibold text-gray-700 mb-3">
+                        Differenze Lati
+                      </label>
+                      <div className="overflow-x-auto">
+                        <div className="grid grid-cols-4 gap-2 min-w-[32rem]">
+                          <div className="bg-white border border-gray-200 rounded p-2">
+                            <p className="text-xs text-gray-500 mb-1">DALD</p>
+                            <p className="text-sm font-semibold text-gray-900">{formatDifferentValue(latestData.rightSideAngleDifferent)}</p>
+                          </div>
+                          <div className="bg-white border border-gray-200 rounded p-2">
+                            <p className="text-xs text-gray-500 mb-1">DDLD</p>
+                            <p className="text-sm font-semibold text-gray-900">{formatDifferentValue(latestData.rightSideMisalignmentDifferent)}</p>
+                          </div>
+                          <div className="bg-white border border-gray-200 rounded p-2">
+                            <p className="text-xs text-gray-500 mb-1">DALS</p>
+                            <p className="text-sm font-semibold text-gray-900">{formatDifferentValue(latestData.leftSideAngleDifferent)}</p>
+                          </div>
+                          <div className="bg-white border border-gray-200 rounded p-2">
+                            <p className="text-xs text-gray-500 mb-1">DDLS</p>
+                            <p className="text-sm font-semibold text-gray-900">{formatDifferentValue(latestData.leftSideMisalignmentDifferent)}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
                     {/* Additional info */}
                     <div className="pt-4 border-t border-gray-200 space-y-3 text-center lg:text-left">
                       <div className="text-lg text-gray-600">
@@ -432,6 +445,29 @@ const RealtimeLatestSingle = () => {
                     <label className="block text-xs font-medium text-gray-600 mb-1">Scostamento CQ</label>
                     <div className="bg-gray-50 p-2 rounded">
                       <p className="text-sm font-semibold text-gray-900">{latestData.scostamentO_CQ_ARTICOLO}%</p>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Differenze Lati</label>
+                    <div className="overflow-x-auto">
+                      <div className="grid grid-cols-4 gap-2 min-w-[32rem]">
+                        <div className="bg-gray-50 p-2 rounded border border-gray-200">
+                          <p className="text-xs text-gray-500 mb-1">DALD</p>
+                          <p className="text-sm font-semibold text-gray-900">{formatDifferentValue(latestData.rightSideAngleDifferent)}</p>
+                        </div>
+                        <div className="bg-gray-50 p-2 rounded border border-gray-200">
+                          <p className="text-xs text-gray-500 mb-1">DDLD</p>
+                          <p className="text-sm font-semibold text-gray-900">{formatDifferentValue(latestData.rightSideMisalignmentDifferent)}</p>
+                        </div>
+                        <div className="bg-gray-50 p-2 rounded border border-gray-200">
+                          <p className="text-xs text-gray-500 mb-1">DALS</p>
+                          <p className="text-sm font-semibold text-gray-900">{formatDifferentValue(latestData.leftSideAngleDifferent)}</p>
+                        </div>
+                        <div className="bg-gray-50 p-2 rounded border border-gray-200">
+                          <p className="text-xs text-gray-500 mb-1">DDLS</p>
+                          <p className="text-sm font-semibold text-gray-900">{formatDifferentValue(latestData.leftSideMisalignmentDifferent)}</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>

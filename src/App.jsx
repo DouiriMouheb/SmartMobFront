@@ -10,6 +10,7 @@ import DispositiviMultimediali from './pages/DispositiviMultimediali';
 import RealtimeControlloQualita from './pages/RealtimeControlloQualita';
 import Acquisizioni from './pages/Acquisizioni';
 import RealtimeLatestSingle from './pages/RealtimeLatestSingle';
+import EsitoImpostazioni from './pages/EsitoImpostazioni';
 
 
 const App = () => (
@@ -29,6 +30,7 @@ const App = () => (
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/settings" element={<TablePage />} />
+        <Route path="/esito-impostazioni" element={<EsitoImpostazioni />} />
         <Route path="/acquisizioni" element={<Acquisizioni />} />
         <Route path="/controllo-qualita" element={<ControlloQualita />} />
         <Route path="/dispositivi-multimediali" element={<DispositiviMultimediali />} />

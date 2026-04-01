@@ -6,20 +6,36 @@
 /**
  * @typedef {Object} AcquisizioneDto
  * @property {number} id
- * @property {string} coD_LINEA
- * @property {string} coD_POSTAZIONE
+ * @property {string} [codLineaProd]
+ * @property {string} [codPostazione]
+ * @property {string} [coD_LINEA]
+ * @property {string} [coD_POSTAZIONE]
+ * @property {string} [fotoSuperiore]
+ * @property {string} [fotoFrontale]
+ * @property {string} [fotoBox]
  * @property {string} [fotO_SUPERIORE]
  * @property {string} [fotO_FRONTALE]
  * @property {string} [fotO_BOX]
+ * @property {boolean|null} [abilitaCq]
+ * @property {boolean|null} [esitoCqArticolo]
+ * @property {number} [scostamentoCqArticolo]
+ * @property {string} [codiceArticolo]
+ * @property {string} [codiceOrdine]
+ * @property {boolean|null} [rightSideAngleDifferent]
+ * @property {boolean|null} [rightSideMisalignmentDifferent]
+ * @property {boolean|null} [leftSideAngleDifferent]
+ * @property {boolean|null} [leftSideMisalignmentDifferent]
+ * @property {string} [dtIns]
+ * @property {string} [dtAgg]
+ * @property {boolean|null} [abilitA_CQ]
  * @property {boolean} [esitO_CQ_ARTICOLO]
  * @property {boolean} [esitO_CQ_BOX]
  * @property {string} [confidenzA_CQ_BOX]
- * @property {string} [scostamentO_CQ_ARTICOLO]
+ * @property {number} [scostamentO_CQ_ARTICOLO]
  * @property {string} [codicE_ARTICOLO]
  * @property {string} [codicE_ORDINE]
- * @property {string} dT_INS
- * @property {string} dT_AGG
- * @property {boolean} abilitA_CQ
+ * @property {string} [dT_INS]
+ * @property {string} [dT_AGG]
  */
 
 /**

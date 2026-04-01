@@ -2,16 +2,11 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import * as signalR from '@microsoft/signalr';
 import toast from 'react-hot-toast';
 import acquisizioniService from '../services/acquisizioniService';
+import { normalizeAcquisizioniEventArray } from '../services/acquisizioniNormalizer';
 
 // Updated API base URL to match the correct server
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ;
 const HUB_URL = `${API_BASE_URL}/hubs/acquisizioni`;
-
-const extractArrayPayload = (payload) => {
-  if (Array.isArray(payload)) return payload;
-  if (Array.isArray(payload?.data)) return payload.data;
-  return payload ? [payload] : [];
-};
 
 const useAcquisizioniRealtime = () => {
   const [connection, setConnection] = useState(null);
@@ -115,7 +110,7 @@ const useAcquisizioniRealtime = () => {
       console.log('🔄 AcquisizioniUpdated event received:', data);
       console.log('📊 Data type:', typeof data, 'Is Array:', Array.isArray(data));
       try {
-        const newAcquisizioni = extractArrayPayload(data);
+        const newAcquisizioni = normalizeAcquisizioniEventArray(data);
         console.log('📋 Processing acquisizioni:', newAcquisizioni.length, 'records');
         setAcquisizioni(newAcquisizioni);
         setLastUpdated(new Date().toISOString());
@@ -131,8 +126,10 @@ const useAcquisizioniRealtime = () => {
       console.log('➕ NewAcquisizione event received:', data);
       try {
         setAcquisizioni(prev => {
-          const incoming = extractArrayPayload(data);
-          const updated = [...incoming, ...prev];
+          const incoming = normalizeAcquisizioniEventArray(data);
+          const incomingIds = new Set(incoming.map(item => item.id));
+          const dedupedPrev = prev.filter(item => !incomingIds.has(item.id));
+          const updated = [...incoming, ...dedupedPrev];
           console.log('➕ Added new record, total:', updated.length);
           return updated;
         });

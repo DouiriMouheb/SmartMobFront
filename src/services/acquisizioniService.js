@@ -1,13 +1,11 @@
 import toast from 'react-hot-toast';
+import {
+  normalizeAcquisizioniArray,
+  normalizeAcquisizioniResponse,
+} from './acquisizioniNormalizer';
 
 // Updated API base URL to match the correct server
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ;
-
-const extractArrayPayload = (payload) => {
-  if (Array.isArray(payload)) return payload;
-  if (Array.isArray(payload?.data)) return payload.data;
-  return [];
-};
 
 class AcquisizioniService {
   constructor() {
@@ -31,7 +29,7 @@ class AcquisizioniService {
       }
 
       const payload = await response.json();
-      return extractArrayPayload(payload);
+      return normalizeAcquisizioniArray(payload);
     } catch (error) {
       console.error('Error fetching latest acquisizioni:', error);
       toast.error(`Errore nel caricamento dei dati: ${error.message}`);
@@ -75,7 +73,8 @@ class AcquisizioniService {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      return await response.json();
+      const payload = await response.json();
+      return normalizeAcquisizioniResponse(payload);
     } catch (error) {
       console.error('Error fetching acquisizioni:', error);
       toast.error(`Errore nel caricamento delle acquisizioni: ${error.message}`);
@@ -102,7 +101,8 @@ class AcquisizioniService {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      return await response.json();
+      const payload = await response.json();
+      return normalizeAcquisizioniResponse(payload);
     } catch (error) {
       console.error('Error fetching acquisizioni by date range:', error);
       toast.error(`Errore nel caricamento delle acquisizioni per periodo: ${error.message}`);

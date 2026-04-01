@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Database, ChevronDown, Loader2, AlertCircle, Calendar, Package, Eye, ChevronLeft, ChevronRight, Search, X, FileBox, Newspaper } from 'lucide-react';
+import { Database, ChevronDown, Loader2, AlertCircle, Package, ChevronLeft, ChevronRight, Search, X, FileBox, Newspaper } from 'lucide-react';
 import { useLineePostazioni } from '../hooks/useLineePostazioni';
 import { useAcquisizioniFilter } from '../hooks/useAcquisizioniFilter';
 
@@ -38,6 +38,43 @@ const Acquisizioni = () => {
     setCurrentPage(1);
   }, [selectedLinea, selectedPostazione, itemsPerPage, searchTerm]);
 
+  const getEsitoLabel = (esito) => {
+    if (esito === null || esito === undefined) {
+      return 'non testato';
+    }
+
+    return esito ? 'positivo' : 'negativo';
+  };
+
+  const getEsitoBadgeClasses = (esito, mobile = false) => {
+    if (esito === null || esito === undefined) {
+      return mobile ? 'bg-gray-500 text-white shadow-sm' : 'bg-gray-100 text-gray-800';
+    }
+
+    if (esito) {
+      return mobile ? 'bg-green-500 text-white shadow-sm' : 'bg-green-100 text-green-800';
+    }
+
+    return mobile ? 'bg-red-500 text-white shadow-sm' : 'bg-red-100 text-red-800';
+  };
+
+  const formatEsitoLabel = (esito) => {
+    const label = getEsitoLabel(esito);
+    return `${label.charAt(0).toUpperCase()}${label.slice(1)}`;
+  };
+
+  const formatDifferentValue = (value) => {
+    if (value === null || value === undefined) {
+      return 'N/A';
+    }
+
+    if (typeof value === 'boolean') {
+      return value ? 'Si' : 'No';
+    }
+
+    return String(value);
+  };
+
   // Filter data based on search term
   const filteredData = acquisizioniData.filter(item => {
     if (!searchTerm) return true;
@@ -47,9 +84,12 @@ const Acquisizioni = () => {
       item.id?.toString().toLowerCase().includes(searchLower) ||
       item.codicE_ARTICOLO?.toLowerCase().includes(searchLower) ||
       item.codicE_ORDINE?.toLowerCase().includes(searchLower) ||
-      (item.esitO_CQ_ARTICOLO ? 'positivo' : 'negativo').includes(searchLower) ||
+      getEsitoLabel(item.esitO_CQ_ARTICOLO).includes(searchLower) ||
       item.scostamentO_CQ_ARTICOLO?.toString().includes(searchLower) ||
-      new Date(item.dT_INS).toLocaleString('it-IT').toLowerCase().includes(searchLower)
+      formatDifferentValue(item.rightSideAngleDifferent).toLowerCase().includes(searchLower) ||
+      formatDifferentValue(item.rightSideMisalignmentDifferent).toLowerCase().includes(searchLower) ||
+      formatDifferentValue(item.leftSideAngleDifferent).toLowerCase().includes(searchLower) ||
+      formatDifferentValue(item.leftSideMisalignmentDifferent).toLowerCase().includes(searchLower)
     );
   });
 
@@ -281,7 +321,16 @@ const Acquisizioni = () => {
                                 Scostamento
                               </th>
                               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Data Inserimento
+                                <span title="Differenza Angolo Lato Destro" className="cursor-help">DALD</span>
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <span title="Differenza Disallineamento Lato Destro" className="cursor-help">DDLD</span>
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <span title="Differenza Angolo Lato Sinistro" className="cursor-help">DALS</span>
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <span title="Differenza Disallineamento Lato Sinistro" className="cursor-help">DDLS</span>
                               </th>
                             </tr>
                           </thead>
@@ -298,21 +347,24 @@ const Acquisizioni = () => {
                                   {item.codicE_ORDINE}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${item.esitO_CQ_ARTICOLO
-                                    ? 'bg-green-100 text-green-800'
-                                    : 'bg-red-100 text-red-800'
-                                    }`}>
-                                    {item.esitO_CQ_ARTICOLO ? 'Positivo' : 'Negativo'}
+                                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getEsitoBadgeClasses(item.esitO_CQ_ARTICOLO)}`}>
+                                    {formatEsitoLabel(item.esitO_CQ_ARTICOLO)}
                                   </span>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                   {item.scostamentO_CQ_ARTICOLO}%
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                  <div className="flex items-center">
-                                    <Calendar className="w-4 h-4 mr-1 text-gray-400" />
-                                    {new Date(item.dT_INS).toLocaleString('it-IT')}
-                                  </div>
+                                  {formatDifferentValue(item.rightSideAngleDifferent)}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                  {formatDifferentValue(item.rightSideMisalignmentDifferent)}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                  {formatDifferentValue(item.leftSideAngleDifferent)}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                  {formatDifferentValue(item.leftSideMisalignmentDifferent)}
                                 </td>
                               </tr>
                             ))}
@@ -329,11 +381,12 @@ const Acquisizioni = () => {
                             {/* Status Header */}
                             <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-4 py-3 rounded-t-lg border-b border-gray-200">
                               <div className="flex items-center justify-between">
-                                <span className={`inline-flex items-center px-3 py-1.5 text-xs font-semibold rounded-lg ${item.esitO_CQ_ARTICOLO
-                                  ? 'bg-green-500 text-white shadow-sm'
-                                  : 'bg-red-500 text-white shadow-sm'
-                                  }`}>
-                                  {item.esitO_CQ_ARTICOLO ? '✓ Positivo' : '✗ Negativo'}
+                                <span className={`inline-flex items-center px-3 py-1.5 text-xs font-semibold rounded-lg ${getEsitoBadgeClasses(item.esitO_CQ_ARTICOLO, true)}`}>
+                                  {item.esitO_CQ_ARTICOLO === null || item.esitO_CQ_ARTICOLO === undefined
+                                    ? '• Non testato'
+                                    : item.esitO_CQ_ARTICOLO
+                                      ? '✓ Positivo'
+                                      : '✗ Negativo'}
                                 </span>
                                 <span className="text-xs text-gray-500 font-medium">
                                   ID: {item.id}
@@ -343,19 +396,26 @@ const Acquisizioni = () => {
 
                             {/* Card Content */}
                             <div className="p-4 space-y-3">
-                              {/* Date and Time Information */}
-                              <div className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg">
-                                <div className="flex items-center text-gray-600">
-                                  <Calendar className="h-4 w-4 mr-2 text-gray-400" />
-                                  <span className="text-sm font-medium">
-                                    {new Date(item.dT_INS).toLocaleDateString('it-IT')}
-                                  </span>
+                              {/* Side Difference Values */}
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <div className="py-2 px-3 bg-gray-50 rounded-lg border border-gray-200">
+                                  <p className="text-xs text-gray-500 mb-1">Right Side Angle Different</p>
+                                  <p className="text-sm font-semibold text-gray-800">{formatDifferentValue(item.rightSideAngleDifferent)}</p>
                                 </div>
-                                <div className="text-sm font-medium text-gray-700">
-                                  {new Date(item.dT_INS).toLocaleTimeString('it-IT', {
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                  })}
+
+                                <div className="py-2 px-3 bg-gray-50 rounded-lg border border-gray-200">
+                                  <p className="text-xs text-gray-500 mb-1">Right Side Misalignment Different</p>
+                                  <p className="text-sm font-semibold text-gray-800">{formatDifferentValue(item.rightSideMisalignmentDifferent)}</p>
+                                </div>
+
+                                <div className="py-2 px-3 bg-gray-50 rounded-lg border border-gray-200">
+                                  <p className="text-xs text-gray-500 mb-1">Left Side Angle Different</p>
+                                  <p className="text-sm font-semibold text-gray-800">{formatDifferentValue(item.leftSideAngleDifferent)}</p>
+                                </div>
+
+                                <div className="py-2 px-3 bg-gray-50 rounded-lg border border-gray-200">
+                                  <p className="text-xs text-gray-500 mb-1">Left Side Misalignment Different</p>
+                                  <p className="text-sm font-semibold text-gray-800">{formatDifferentValue(item.leftSideMisalignmentDifferent)}</p>
                                 </div>
                               </div>
 

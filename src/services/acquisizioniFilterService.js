@@ -1,33 +1,6 @@
+import { normalizeAcquisizioniArray } from './acquisizioniNormalizer';
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5065';
-
-const extractArrayPayload = (payload) => {
-  if (Array.isArray(payload)) {
-    return payload;
-  }
-
-  if (Array.isArray(payload?.data)) {
-    return payload.data;
-  }
-
-  return [];
-};
-
-const normalizeAcquisizioneRecord = (item) => {
-  const codiceArticolo = item?.codiceArticolo ?? item?.codicE_ARTICOLO ?? '';
-  const codiceOrdine = item?.codiceOrdine ?? item?.codicE_ORDINE ?? '';
-  const esitoCqArticolo = item?.esitoCqArticolo ?? item?.esitO_CQ_ARTICOLO ?? null;
-  const scostamentoCqArticolo = item?.scostamentoCqArticolo ?? item?.scostamentO_CQ_ARTICOLO ?? 0;
-  const dtIns = item?.dtIns ?? item?.dT_INS ?? null;
-
-  return {
-    ...item,
-    codicE_ARTICOLO: codiceArticolo,
-    codicE_ORDINE: codiceOrdine,
-    esitO_CQ_ARTICOLO: esitoCqArticolo,
-    scostamentO_CQ_ARTICOLO: scostamentoCqArticolo,
-    dT_INS: dtIns,
-  };
-};
 
 export const fetchAcquisizioniByFilter = async (codLineaProd, codPostazione) => {
   try {
@@ -55,11 +28,14 @@ export const fetchAcquisizioniByFilter = async (codLineaProd, codPostazione) => 
     }
 
     const payload = await response.json();
-    const data = extractArrayPayload(payload).map(normalizeAcquisizioneRecord);
+    const data = normalizeAcquisizioniArray(payload);
     
     return {
-      success: true,
-      message: 'Acquisizioni caricate con successo',
+      success: payload?.success ?? true,
+      message: payload?.message ?? 'Acquisizioni caricate con successo',
+      page: payload?.page,
+      pageSize: payload?.pageSize,
+      total: payload?.total ?? data.length,
       data
     };
   } catch (error) {
