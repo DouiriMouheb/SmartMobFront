@@ -110,26 +110,26 @@ const Acquisizioni = () => {
   };
 
   return (
-    <div className="p-3 sm:p-6">
+    <div className="app-page">
       {/* Header */}
-      <div className="mb-6 sm:mb-8">
-        <div className="flex items-center gap-2 sm:gap-3 mb-2">
-          <Database className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600" />
-          <h1 className="text-xl sm:text-3xl font-bold text-gray-900">Acquisizione</h1>
+      <div className="app-page-header">
+        <div className="app-page-title-row">
+          <Database className="w-6 h-6 sm:w-8 sm:h-8 text-red-700" />
+          <h1 className="app-page-title">Acquisizione</h1>
         </div>
-        <p className="text-sm sm:text-base text-gray-600 p-2">Gestisci le acquisizioni del sistema</p>
+        <p className="app-page-subtitle">Gestisci le acquisizioni del sistema</p>
 
         {/* Loading State */}
         {loading && (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+            <Loader2 className="app-spinner" />
             <span className="ml-2 text-gray-600">Caricamento dati...</span>
           </div>
         )}
 
         {/* Error State */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+          <div className="app-alert-error mb-6">
             <div className="flex items-center">
               <AlertCircle className="w-5 h-5 text-red-500 mr-2" />
               <span className="text-red-700">Errore nel caricamento dei dati: {error}</span>
@@ -149,7 +149,7 @@ const Acquisizioni = () => {
                 <select
                   value={selectedLinea}
                   onChange={(e) => setSelectedLinea(e.target.value)}
-                  className="w-full px-3 sm:px-4 py-3 sm:py-3.5 bg-white border-2 border-gray-200 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none cursor-pointer text-gray-900 transition-all duration-200 hover:border-gray-300 group-hover:shadow-md text-sm sm:text-base"
+                  className="w-full px-3 sm:px-4 py-3 sm:py-3.5 bg-white border-2 border-gray-200 rounded-xl shadow-sm focus:ring-2 focus:ring-red-400 focus:border-red-400 appearance-none cursor-pointer text-gray-900 transition-all duration-200 hover:border-gray-300 group-hover:shadow-md text-sm sm:text-base"
                 >
                   <option value="">Seleziona una linea...</option>
                   {linee.map((linea) => (
@@ -158,7 +158,7 @@ const Acquisizioni = () => {
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400 pointer-events-none transition-transform group-hover:text-blue-500" />
+                <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400 pointer-events-none transition-transform group-hover:text-red-500" />
               </div>
 
             </div>
@@ -173,7 +173,7 @@ const Acquisizioni = () => {
                   value={selectedPostazione}
                   onChange={(e) => setSelectedPostazione(e.target.value)}
                   disabled={!selectedLinea || postazioni.length === 0}
-                  className={`w-full px-3 sm:px-4 py-3 sm:py-3.5 bg-white border-2 rounded-xl shadow-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 appearance-none cursor-pointer text-gray-900 transition-all duration-200 text-sm sm:text-base ${!selectedLinea || postazioni.length === 0
+                  className={`w-full px-3 sm:px-4 py-3 sm:py-3.5 bg-white border-2 rounded-xl shadow-sm focus:ring-2 focus:ring-red-400 focus:border-red-400 appearance-none cursor-pointer text-gray-900 transition-all duration-200 text-sm sm:text-base ${!selectedLinea || postazioni.length === 0
                     ? 'bg-gray-50 border-gray-200 cursor-not-allowed opacity-60'
                     : 'border-gray-200 hover:border-gray-300 group-hover:shadow-md'
                     }`}
@@ -194,7 +194,7 @@ const Acquisizioni = () => {
                 </select>
                 <ChevronDown className={`absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 pointer-events-none transition-transform ${!selectedLinea || postazioni.length === 0
                   ? 'text-gray-300'
-                  : 'text-gray-400 group-hover:text-green-500'
+                  : 'text-gray-400 group-hover:text-red-500'
                   }`} />
               </div>
 
@@ -208,9 +208,9 @@ const Acquisizioni = () => {
 
       {/* Acquisizioni Results Table */}
       {selectedLinea && selectedPostazione && (
-        <div className="mt-2 sm:mt-6 bg-white rounded-lg shadow-md  sm:p-6">
+        <div className="app-surface mt-2 sm:mt-6 p-4 sm:p-6">
           <div className="flex items-center gap-2 mb-4">
-            <Package className="w-5 h-5 text-blue-500" />
+            <Package className="w-5 h-5 text-red-700" />
             <h2 className="text-lg sm:text-xl font-semibold text-gray-800">
               Risultati Acquisizioni
             </h2>
@@ -219,7 +219,7 @@ const Acquisizioni = () => {
           {/* Loading state for acquisizioni */}
           {acquisizioniLoading && (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+              <Loader2 className="h-6 w-6 animate-spin text-red-700" />
               <span className="ml-2 text-gray-600">Caricamento acquisizioni...</span>
             </div>
           )}
@@ -255,7 +255,7 @@ const Acquisizioni = () => {
                         placeholder="Cerca in tutti i campi..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="block w-full pl-9 sm:pl-10 pr-9 sm:pr-10 py-2.5 sm:py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50 hover:bg-white text-sm sm:text-base"
+                        className="block w-full pl-9 sm:pl-10 pr-9 sm:pr-10 py-2.5 sm:py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-red-400 focus:border-red-400 transition-all duration-200 bg-gray-50 hover:bg-white text-sm sm:text-base"
                       />
                       {searchTerm && (
                         <button
@@ -278,7 +278,7 @@ const Acquisizioni = () => {
                         <select
                           value={itemsPerPage}
                           onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
-                          className="px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                          className="px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-red-400 focus:border-red-400 bg-white"
                         >
                           <option value={5}>5</option>
                           <option value={10}>10</option>
@@ -288,7 +288,7 @@ const Acquisizioni = () => {
                         <div className="text-xs text-gray-600 font-medium text-center sm:text-right">
                           Totale: {totalItems}
                           {searchTerm && totalItems !== acquisizioniData.length && (
-                            <span className="text-blue-600 ml-1">(filtrati)</span>
+                            <span className="text-red-700 ml-1">(filtrati)</span>
                           )}
                         </div>
                       </div>
@@ -421,29 +421,29 @@ const Acquisizioni = () => {
 
                               {/* Order Information */}
                               <div className="space-y-2">
-                                <div className="flex items-center justify-between py-2 px-3 bg-blue-50 rounded-lg border border-blue-100">
-                                  <div className="flex items-center text-blue-700">
+                                <div className="flex items-center justify-between py-2 px-3 bg-slate-50 rounded-lg border border-slate-200">
+                                  <div className="flex items-center text-slate-700">
                                     <Newspaper className="h-4 w-4 mr-2" />
-                                    <span className="text-xs text-blue-600 font-medium uppercase tracking-wide">Ordine</span>
+                                    <span className="text-xs text-slate-600 font-medium uppercase tracking-wide">Ordine</span>
                                   </div>
-                                  <span className="text-sm font-semibold text-blue-800 font-mono">
+                                  <span className="text-sm font-semibold text-slate-800 font-mono">
                                     {item.codicE_ORDINE}
                                   </span>
                                 </div>
 
-                                <div className="flex items-center justify-between py-2 px-3 bg-purple-50 rounded-lg border border-purple-100">
-                                  <div className="flex items-center text-purple-700">
+                                <div className="flex items-center justify-between py-2 px-3 bg-red-50 rounded-lg border border-red-100">
+                                  <div className="flex items-center text-red-700">
                                     <FileBox className="h-4 w-4 mr-2" />
-                                    <span className="text-xs text-purple-600 font-medium uppercase tracking-wide">Articolo</span>
+                                    <span className="text-xs text-red-600 font-medium uppercase tracking-wide">Articolo</span>
                                   </div>
-                                  <span className="text-sm font-semibold text-purple-800 font-mono">
+                                  <span className="text-sm font-semibold text-red-800 font-mono">
                                     {item.codicE_ARTICOLO}
                                   </span>
                                 </div>
 
                                 {/* Percentage Badge */}
                                 <div className="flex justify-center pt-1">
-                                  <span className="flex items-center justify-between py-2 px-3 bg-purple-50 rounded-lg border border-purple-100">
+                                  <span className="flex items-center justify-between py-2 px-3 bg-red-50 rounded-lg border border-red-100">
     
                                     {item.scostamentO_CQ_ARTICOLO}%
                                   </span>
@@ -466,7 +466,7 @@ const Acquisizioni = () => {
                             {searchTerm && (
                               <button
                                 onClick={() => setSearchTerm('')}
-                                className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                                className="mt-2 px-4 py-2 bg-red-700 text-white rounded-lg hover:bg-red-800 transition-colors text-sm"
                               >
                                 Cancella Ricerca
                               </button>
@@ -485,7 +485,7 @@ const Acquisizioni = () => {
                         disabled={currentPage === 1}
                         className={`flex items-center gap-1 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-lg transition-all duration-200 ${currentPage === 1
                           ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                          : 'bg-white text-gray-700 border border-gray-300 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600 shadow-sm'
+                          : 'bg-white text-gray-700 border border-gray-300 hover:bg-red-50 hover:border-red-300 hover:text-red-700 shadow-sm'
                           }`}
                       >
                         <ChevronLeft className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -510,8 +510,8 @@ const Acquisizioni = () => {
                               key={page}
                               onClick={() => handlePageChange(page)}
                               className={`w-7 h-7 sm:w-8 sm:h-8 text-xs sm:text-sm font-medium rounded-lg transition-all duration-200 ${currentPage === page
-                                ? 'bg-blue-600 text-white shadow-md'
-                                : 'bg-white text-gray-700 border border-gray-300 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600'
+                                ? 'bg-red-700 text-white shadow-md'
+                                : 'bg-white text-gray-700 border border-gray-300 hover:bg-red-50 hover:border-red-300 hover:text-red-700'
                                 }`}
                             >
                               {page}
@@ -524,7 +524,7 @@ const Acquisizioni = () => {
                             <span className="px-1 text-gray-400 text-xs">•••</span>
                             <button
                               onClick={() => handlePageChange(totalPages)}
-                              className="w-7 h-7 sm:w-8 sm:h-8 text-xs sm:text-sm font-medium rounded-lg bg-white text-gray-700 border border-gray-300 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600 transition-all duration-200"
+                              className="w-7 h-7 sm:w-8 sm:h-8 text-xs sm:text-sm font-medium rounded-lg bg-white text-gray-700 border border-gray-300 hover:bg-red-50 hover:border-red-300 hover:text-red-700 transition-all duration-200"
                             >
                               {totalPages}
                             </button>
@@ -537,7 +537,7 @@ const Acquisizioni = () => {
                         disabled={currentPage === totalPages}
                         className={`flex items-center gap-1 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-lg transition-all duration-200 ${currentPage === totalPages
                           ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                          : 'bg-white text-gray-700 border border-gray-300 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600 shadow-sm'
+                          : 'bg-white text-gray-700 border border-gray-300 hover:bg-red-50 hover:border-red-300 hover:text-red-700 shadow-sm'
                           }`}
                       >
                         <span className="hidden xs:inline">Succ</span>

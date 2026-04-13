@@ -3,14 +3,15 @@ import Sidebar from '../components/Sidebar';
 
 const MainLayout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
   return (
-    <div>
+    <div className="min-h-screen">
       <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
       <main
-        className="p-6 bg-gray-100 min-h-screen transition-all duration-300"
-        style={{ marginLeft: sidebarOpen ? '16rem' : '4rem' }}
+        className="app-shell transition-all duration-300"
+        style={{ marginLeft: sidebarOpen ? '17rem' : '4.5rem' }}
       >
-        {children}
+        <div className="app-content">{children}</div>
       </main>
     </div>
   );

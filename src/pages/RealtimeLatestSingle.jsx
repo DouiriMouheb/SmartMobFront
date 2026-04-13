@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Radio,
   ChevronDown,
@@ -26,13 +26,12 @@ const RealtimeLatestSingle = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [lastUpdate, setLastUpdate] = useState(null);
 
   // Use the hook to get linee/postazioni data
   const { loading: dropdownLoading, error: dropdownError, getLinee, getPostazioniForLinea } = useLineePostazioni();
 
   // Simple fetch function
-  const fetchLatestData = async () => {
+  const fetchLatestData = useCallback(async () => {
     if (!selectedLinea || !selectedPostazione) return;
 
     try {
@@ -48,19 +47,18 @@ const RealtimeLatestSingle = () => {
         const payload = await response.json();
         const data = normalizeSingleAcquisizione(payload);
         setLatestData(data);
-        setLastUpdate(new Date());
         setError(null);
       } else {
         setError('Errore nel caricamento dei dati');
         setLatestData(null);
       }
-    } catch (err) {
+    } catch {
       setError('Errore di connessione');
       setLatestData(null);
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedLinea, selectedPostazione]);
 
   // Auto-fetch when both dropdowns are selected
   useEffect(() => {
@@ -76,7 +74,7 @@ const RealtimeLatestSingle = () => {
     } else {
       setLatestData(null);
     }
-  }, [selectedLinea, selectedPostazione]);
+  }, [selectedLinea, selectedPostazione, fetchLatestData]);
 
   // Reset postazione when linea changes
   useEffect(() => {
@@ -137,13 +135,13 @@ const RealtimeLatestSingle = () => {
   };
 
   return (
-    <div className="p-3 sm:p-6">
+    <div className="app-page">
       {/* Header */}
 
-      <div className="mb-6 sm:mb-8">
-        <div className="flex items-center gap-2 sm:gap-3 mb-2">
-          <Radio className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600" />
-          <h1 className="text-xl sm:text-3xl font-bold text-gray-900">Monitoraggio Real-time</h1>
+      <div className="app-page-header">
+        <div className="app-page-title-row">
+          <Radio className="w-6 h-6 sm:w-8 sm:h-8 text-red-700" />
+          <h1 className="app-page-title">Monitoraggio Real-time</h1>
         </div>
 
         {/* Dropdowns */}
@@ -157,7 +155,7 @@ const RealtimeLatestSingle = () => {
                 <select
                   value={selectedLinea}
                   onChange={(e) => setSelectedLinea(e.target.value)}
-                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 appearance-none cursor-pointer text-gray-900"
+                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-red-400 focus:border-red-400 appearance-none cursor-pointer text-gray-900"
                 >
                   <option value="">Seleziona una linea...</option>
                   {linee.map((linea) => (
@@ -180,7 +178,7 @@ const RealtimeLatestSingle = () => {
                   value={selectedPostazione}
                   onChange={(e) => setSelectedPostazione(e.target.value)}
                   disabled={!selectedLinea || postazioni.length === 0}
-                  className={`w-full px-4 py-3 bg-white border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 appearance-none cursor-pointer text-gray-900 ${!selectedLinea || postazioni.length === 0
+                  className={`w-full px-4 py-3 bg-white border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-red-400 focus:border-red-400 appearance-none cursor-pointer text-gray-900 ${!selectedLinea || postazioni.length === 0
                     ? 'bg-gray-100 cursor-not-allowed opacity-50'
                     : ''
                     }`}
@@ -209,14 +207,14 @@ const RealtimeLatestSingle = () => {
       {/* Loading State for dropdowns */}
       {dropdownLoading && (
         <div className="flex items-center justify-center py-8">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+          <Loader2 className="app-spinner" />
           <span className="ml-2 text-gray-600">Caricamento opzioni...</span>
         </div>
       )}
 
       {/* Error State for dropdowns */}
       {dropdownError && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+        <div className="app-alert-error mb-6">
           <div className="flex items-center">
             <AlertCircle className="w-5 h-5 text-red-500 mr-2" />
             <span className="text-red-700">Errore nel caricamento delle opzioni: {dropdownError}</span>
@@ -233,7 +231,7 @@ const RealtimeLatestSingle = () => {
           {/* Loading state */}
           {loading && !latestData && (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
+              <Loader2 className="app-spinner" />
               <span className="ml-2 text-gray-600">Caricamento ultima acquisizione...</span>
             </div>
           )}
@@ -363,7 +361,7 @@ const RealtimeLatestSingle = () => {
                     </div>
                     <button
                       onClick={handleViewClick}
-                      className="mt-6 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center gap-2 transition-colors"
+                      className="mt-6 px-6 py-3 bg-red-700 text-white rounded-lg hover:bg-red-800 flex items-center gap-2 transition-colors"
                     >
                       <Eye size={20} />
                       Visualizza Dettagli
@@ -395,7 +393,7 @@ const RealtimeLatestSingle = () => {
         {latestData && (
           <div className="space-y-4">
             {/* Compact Header with Status */}
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-3 rounded-lg border border-blue-200">
+            <div className="bg-gradient-to-r from-slate-100 to-red-50 p-3 rounded-lg border border-red-200">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div>
@@ -425,7 +423,7 @@ const RealtimeLatestSingle = () => {
               {/* Product Information */}
               <div className="bg-white border border-gray-200 rounded-lg p-3">
                 <h4 className="text-sm font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                  <Package className="w-4 h-4 text-blue-500" />
+                  <Package className="w-4 h-4 text-red-700" />
                   Informazioni Prodotto
                 </h4>
                 <div className="space-y-2">
@@ -476,7 +474,7 @@ const RealtimeLatestSingle = () => {
               {/* Photos Section - Matching Real-time Controllo */}
               <div className="bg-white border border-gray-200 rounded-lg p-3">
                 <h4 className="text-sm font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                  <Camera className="w-4 h-4 text-blue-500" />
+                  <Camera className="w-4 h-4 text-red-700" />
                   Foto
                 </h4>
                 <div className="space-y-4">
@@ -503,7 +501,7 @@ const RealtimeLatestSingle = () => {
                           </div>
                           <button
                             onClick={() => handleImageOpen(latestData.fotO_SUPERIORE)}
-                            className="mt-2 w-full px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center justify-center gap-2 transition-colors text-sm"
+                            className="mt-2 w-full px-3 py-2 bg-red-700 text-white rounded hover:bg-red-800 flex items-center justify-center gap-2 transition-colors text-sm"
                           >
                             <Eye size={16} />
                             Apri in nuova finestra
@@ -542,7 +540,7 @@ const RealtimeLatestSingle = () => {
                           </div>
                           <button
                             onClick={() => handleImageOpen(latestData.fotO_FRONTALE)}
-                            className="mt-2 w-full px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center justify-center gap-2 transition-colors text-sm"
+                            className="mt-2 w-full px-3 py-2 bg-red-700 text-white rounded hover:bg-red-800 flex items-center justify-center gap-2 transition-colors text-sm"
                           >
                             <Eye size={16} />
                             Apri in nuova finestra

@@ -4,7 +4,7 @@ import Modal from './Modal';
 import { createDispositiviMultimedialiRecord, updateDispositiviMultimedialiRecord, deleteDispositiviMultimedialiRecord } from '../services/dispositiviMultimedialiService';
 import { showSuccess, showError } from '../services/toastService';
 
-const DispositiviMultimedialiTable = ({ data, updateRecord, refreshRecords }) => {
+const DispositiviMultimedialiTable = ({ data, refreshRecords }) => {
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedRow, setSelectedRow] = useState(null);
     const [editMode, setEditMode] = useState(false);
@@ -137,15 +137,15 @@ const DispositiviMultimedialiTable = ({ data, updateRecord, refreshRecords }) =>
     };
 
     // Sortable header component
-    const SortableHeader = ({ field, children, className = "" }) => (
+    const SortableHeader = ({ field, children, className = '' }) => (
         <th 
-            className={`px-4 py-2 border-b-2 border-gray-300 cursor-pointer hover:bg-gray-50 ${className}`}
+            className={`px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-600 cursor-pointer hover:bg-slate-100 ${className}`}
             onClick={() => handleSort(field)}
         >
             <div className="flex items-center justify-center gap-1">
                 {children}
                 {sortField === field && (
-                    <span className="text-red-500">
+                    <span className="text-red-700">
                         {sortDirection === 'asc' ? '↑' : '↓'}
                     </span>
                 )}
@@ -218,7 +218,7 @@ const DispositiviMultimedialiTable = ({ data, updateRecord, refreshRecords }) =>
             } else {
                 showError(res.message || 'Operazione fallita');
             }
-        } catch (err) {
+        } catch {
             showError('Operazione fallita');
         }
         setSaving(false);
@@ -239,7 +239,7 @@ const DispositiviMultimedialiTable = ({ data, updateRecord, refreshRecords }) =>
             } else {
                 showError(res.message || 'Eliminazione fallita');
             }
-        } catch (err) {
+        } catch {
             showError('Eliminazione fallita');
         }
         setDeleting(false);
@@ -300,7 +300,7 @@ const DispositiviMultimedialiTable = ({ data, updateRecord, refreshRecords }) =>
              
                 <button
                     type="button"
-                    className="px-3 py-1 bg-blue-500 text-white rounded flex items-center"
+                    className="px-3 py-1 bg-red-700 text-white rounded flex items-center hover:bg-red-800"
                     onClick={handleEditClick}
                 >
                     <Edit size={16} className="mr-1" />
@@ -327,9 +327,9 @@ const DispositiviMultimedialiTable = ({ data, updateRecord, refreshRecords }) =>
 
     return (
         <>
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div className="app-surface overflow-hidden">
                 {/* Header with search and create button */}
-                <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+                <div className="app-toolbar">
                     <div className="relative flex-1 max-w-md">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
                         <input
@@ -337,12 +337,12 @@ const DispositiviMultimedialiTable = ({ data, updateRecord, refreshRecords }) =>
                             value={searchTerm}
                             onChange={(e) => handleSearchChange(e.target.value)}
                             placeholder="Cerca per codice, seriale, path o data..."
-                            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                            className="app-input pl-10 pr-4"
                         />
                     </div>
                     <button
                         onClick={handleCreateClick}
-                        className="ml-4 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 flex items-center gap-2"
+                        className="app-btn-primary ml-4"
                     >
                         <Plus size={20} />
                         Nuovo Record
@@ -350,8 +350,8 @@ const DispositiviMultimedialiTable = ({ data, updateRecord, refreshRecords }) =>
                 </div>
 
                 {/* Table */}
-                <table className="w-full">
-                    <thead className="bg-gray-400">
+                <table className="app-table w-full">
+                    <thead>
                         <tr>
                             <SortableHeader field="codLineaProd" className="text-center">
                                 Cod. Linea Prod

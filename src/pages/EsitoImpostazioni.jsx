@@ -199,26 +199,26 @@ const EsitoImpostazioni = () => {
   };
 
   return (
-    <div className="p-3 sm:p-6">
-      <div className="mb-6 sm:mb-8">
-        <div className="flex items-center gap-2 sm:gap-3 mb-2">
-          <SlidersHorizontal className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600" />
-          <h1 className="text-xl sm:text-3xl font-bold text-gray-900">Esito Impostazioni</h1>
+    <div className="app-page">
+      <div className="app-page-header">
+        <div className="app-page-title-row">
+          <SlidersHorizontal className="w-6 h-6 sm:w-8 sm:h-8 text-red-700" />
+          <h1 className="app-page-title">Esito Impostazioni</h1>
         </div>
-        <p className="text-sm sm:text-base text-gray-600 p-2">
+        <p className="app-page-subtitle">
           Gestisci i valori di soglia per l&apos;esito delle differenze lato destro e sinistro.
         </p>
       </div>
 
       {loading && (
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+          <Loader2 className="app-spinner" />
           <span className="ml-2 text-gray-600">Caricamento impostazioni esito...</span>
         </div>
       )}
 
       {!loading && error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+        <div className="app-alert-error mb-6">
           <div className="flex items-center">
             <AlertCircle className="w-5 h-5 text-red-500 mr-2" />
             <span className="text-red-700">Errore: {error}</span>
@@ -227,7 +227,7 @@ const EsitoImpostazioni = () => {
       )}
 
       {!loading && !error && (
-        <div className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
+        <div className="app-surface overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full border-collapse">
               <thead className="bg-gray-100">
@@ -254,7 +254,7 @@ const EsitoImpostazioni = () => {
                           value={formValues[row.key]}
                           onChange={(event) => handleInputChange(row.key, event.target.value)}
                           onKeyDown={(event) => handleInputKeyDown(event, row.key)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-red-400"
                           placeholder="Inserisci valore"
                         />
 
@@ -296,7 +296,7 @@ const EsitoImpostazioni = () => {
                 type="button"
                 onClick={() => loadSettings(true)}
                 disabled={refreshing || saving}
-                className="px-3 py-2 text-sm border border-gray-300 rounded-md bg-white hover:bg-gray-100 disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
+                className="app-btn-secondary"
               >
                 <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
                 Ricarica
@@ -308,7 +308,7 @@ const EsitoImpostazioni = () => {
                 disabled={!record || saving || !hasChanges}
                 className={`px-4 py-2 text-sm rounded-md text-white flex items-center gap-2 ${!record || saving || !hasChanges
                   ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-blue-600 hover:bg-blue-700'
+                  : 'bg-red-700 hover:bg-red-800'
                   }`}
               >
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}

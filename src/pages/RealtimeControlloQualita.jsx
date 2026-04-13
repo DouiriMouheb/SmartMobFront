@@ -37,34 +37,6 @@ const RealtimeControlloQualita = () => {
     isDisconnected,
   } = useAcquisizioniRealtime();
 
-  // Helper function to format image URLs
-  const formatImageUrl = (imageUrl) => {
-    if (!imageUrl) return null;
-    
-    // If it's already a proper web URL, return as is
-    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-      return imageUrl;
-    }
-    
-    // If it starts with //, add https:
-    if (imageUrl.startsWith('//')) {
-      return `https:${imageUrl}`;
-    }
-    
-    // If it's a relative path, assume it's from your domain
-    if (imageUrl.startsWith('/')) {
-      return imageUrl;
-    }
-    
-    // Handle database format like "192.168.1.90/public/Canon%20EOS%20R100/100CANON/IMG_0317.JPG"
-    // Use HTTP protocol for network file access (assumes the server has HTTP file sharing enabled)
-    if (imageUrl.match(/^\d+\.\d+\.\d+\.\d+\//) || (imageUrl.includes('.') && !imageUrl.includes(' '))) {
-      return `http://${imageUrl}`;
-    }
-    
-    return imageUrl;
-  };
-
   // Simple function to open image URL in new window
   const handleImageOpen = (imageUrl) => {
     if (imageUrl) {
@@ -129,98 +101,91 @@ const RealtimeControlloQualita = () => {
     setSelectedRecord(null);
   };
 
-  // Get quality control result badge
-  const getQualityBadge = (esito) => {
-    if (esito === null || esito === undefined) return null;
-
-    // Handle boolean values
-    if (typeof esito === 'boolean') {
-      return (
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${esito ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-          }`}>
-          {esito ? 'OK' : 'NOT OK'}
-        </span>
-      );
-    }
-
-    // Handle string values
-    const esitoStr = String(esito).toLowerCase();
-    const isSuccess = esitoStr.includes('ok') || esitoStr.includes('pass') || esitoStr === 'true';
-    return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${isSuccess ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-        }`}>
-        {String(esito)}
-      </span>
-    );
-  };
-
   return (
-    <div className="p-2 max-w-7xl mx-auto">
-      {/*
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold text-gray-900">Controllo Qualità Real-time</h1>
-          <div className="flex items-center gap-4">
-          
-            {connectionId && (
-              <div className="text-sm text-gray-600">
-                ID: {connectionId.substring(0, 8)}...
-              </div>
-            )}
+    <div className="app-page">
+      <div className="app-page-header">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <div className="app-page-title-row">
+              <Activity className="h-7 w-7 text-red-700" />
+              <h1 className="app-page-title">Controllo Qualita Real-time</h1>
+            </div>
+            <p className="app-page-subtitle">Monitoraggio continuo delle ultime acquisizioni e stato connessione.</p>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={refreshData}
+              className="app-btn-secondary"
+              disabled={isLoading}
+            >
+              <CloudCog className="h-4 w-4" />
+              Aggiorna
+            </button>
+            <button
+              type="button"
+              onClick={reconnect}
+              className="app-btn-primary"
+              disabled={isConnecting || isReconnecting || isConnected}
+            >
+              <RefreshCw className={`h-4 w-4 ${isConnecting || isReconnecting ? 'animate-spin' : ''}`} />
+              Riconnetti
+            </button>
           </div>
         </div>
-        
-       
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <div className="flex items-center gap-3">
-              <Hash className="w-5 h-5 text-blue-500" />
-              <div>
-                <p className="text-sm text-gray-600">Acquisizioni Totali</p>
-                <p className="text-xl font-bold text-gray-900">{recordCount}</p>
-              </div>
+
+        <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <div className="flex items-center gap-2 text-slate-600">
+              <Hash className="h-4 w-4 text-red-700" />
+              <span className="text-xs font-semibold uppercase tracking-wide">Totale Acquisizioni</span>
             </div>
+            <p className="mt-2 text-xl font-bold text-slate-900">{recordCount}</p>
           </div>
-          
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <div className="flex items-center gap-3">
-              <Clock className="w-5 h-5 text-green-500" />
-              <div>
-                <p className="text-sm text-gray-600">Ultimo Aggiornamento</p>
-                <p className="text-xl font-bold text-gray-900">
-                  {lastUpdated ? formatTimestamp(lastUpdated) : 'N/A'}
-                </p>
-              </div>
+
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <div className="flex items-center gap-2 text-slate-600">
+              <Clock className="h-4 w-4 text-red-700" />
+              <span className="text-xs font-semibold uppercase tracking-wide">Ultimo Aggiornamento</span>
             </div>
+            <p className="mt-2 text-sm font-semibold text-slate-900">{lastUpdated ? formatTimestamp(lastUpdated) : 'N/A'}</p>
           </div>
-          
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <div className="flex items-center gap-3">
-              <Activity className="w-5 h-5 text-purple-500" />
-              <div>
-                <p className="text-sm text-gray-600">Stato Connessione</p>
-                <p className="text-xl font-bold text-gray-900">{statusText}</p>
-              </div>
+
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <div className="flex items-center gap-2 text-slate-600">
+              <StatusIcon className={`h-4 w-4 ${color} ${isConnecting || isReconnecting ? 'animate-spin' : ''}`} />
+              <span className="text-xs font-semibold uppercase tracking-wide">Stato Connessione</span>
             </div>
+            <div className="mt-2 flex items-center gap-2">
+              <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-semibold ${bg} ${color}`}>{statusText}</span>
+              {isDisconnected && <span className="text-xs text-slate-500">Nessuna connessione attiva</span>}
+            </div>
+            {connectionId && <p className="mt-2 text-xs text-slate-500">ID: {connectionId.substring(0, 8)}...</p>}
           </div>
         </div>
       </div>
-    */}
+
+      {error && (
+        <div className="app-alert-error">
+          <p className="text-sm">{error}</p>
+        </div>
+      )}
 
 
       {/* Data Cards */}
       {isLoading && acquisizioni.length === 0 ? (
-        <div className="p-8 text-center">
-          <Loader className="w-8 h-8 animate-spin mx-auto mb-4 text-gray-400" />
+        <div className="app-surface p-8 text-center">
+          <Loader className="w-8 h-8 animate-spin mx-auto mb-4 text-red-700" />
           <p className="text-gray-500">Caricamento dati...</p>
         </div>
       ) : acquisizioni.length === 0 ? (
-        <div className="p-8 text-center">
+        <div className="app-surface p-8 text-center">
           <Activity className="w-8 h-8 mx-auto mb-4 text-gray-400" />
           <p className="text-gray-500">Nessuna acquisizione disponibile</p>
         </div>
       ) : (
-        <div className="p-6">
+        <div className="p-2 sm:p-4">
           <div className="grid grid-cols-1 gap-8">
             {acquisizioni.map((record, index) => {
               // Determine the color of the quality indicator square
@@ -345,7 +310,7 @@ const RealtimeControlloQualita = () => {
                       </div>
                       <button
                         onClick={() => handleViewClick(record)}
-                        className="mt-6 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center gap-2 transition-colors"
+                        className="mt-6 px-6 py-3 bg-red-700 text-white rounded-lg hover:bg-red-800 flex items-center gap-2 transition-colors"
                       >
                         <Eye size={20} />
                         Visualizza Dettagli
@@ -378,7 +343,7 @@ const RealtimeControlloQualita = () => {
         {selectedRecord && (
           <div className="space-y-4">
             {/* Compact Header with Status */}
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-3 rounded-lg border border-blue-200">
+            <div className="bg-gradient-to-r from-slate-100 to-red-50 p-3 rounded-lg border border-red-200">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div>
@@ -423,7 +388,7 @@ const RealtimeControlloQualita = () => {
               {/* Product Information */}
               <div className="bg-white border border-gray-200 rounded-lg p-3">
                 <h4 className="text-sm font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                  <Package className="w-4 h-4 text-blue-500" />
+                  <Package className="w-4 h-4 text-red-700" />
                   Informazioni Prodotto
                 </h4>
                 <div className="space-y-2">
@@ -468,7 +433,7 @@ const RealtimeControlloQualita = () => {
 
 <div className="bg-white border border-gray-200 rounded-lg p-3">
   <h4 className="text-sm font-semibold text-gray-800 mb-2 flex items-center gap-2">
-    <Camera className="w-4 h-4 text-blue-500" />
+    <Camera className="w-4 h-4 text-red-700" />
     Foto
   </h4>
   <div className="space-y-4">
@@ -495,7 +460,7 @@ const RealtimeControlloQualita = () => {
             </div>
             <button
               onClick={() => handleImageOpen(selectedRecord.fotO_SUPERIORE)}
-              className="mt-2 w-full px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center justify-center gap-2 transition-colors text-sm"
+              className="mt-2 w-full px-3 py-2 bg-red-700 text-white rounded hover:bg-red-800 flex items-center justify-center gap-2 transition-colors text-sm"
             >
               <Eye size={16} />
               Apri in nuova finestra
@@ -534,7 +499,7 @@ const RealtimeControlloQualita = () => {
             </div>
             <button
               onClick={() => handleImageOpen(selectedRecord.fotO_FRONTALE)}
-              className="mt-2 w-full px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center justify-center gap-2 transition-colors text-sm"
+              className="mt-2 w-full px-3 py-2 bg-red-700 text-white rounded hover:bg-red-800 flex items-center justify-center gap-2 transition-colors text-sm"
             >
               <Eye size={16} />
               Apri in nuova finestra

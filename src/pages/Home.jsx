@@ -110,6 +110,7 @@ const Home = () => {
       count: overall.trueCount,
       percentage: overall.truePercentage,
       barClass: 'bg-emerald-500',
+      color: '#10b981',
     },
     {
       key: 'false',
@@ -117,6 +118,7 @@ const Home = () => {
       count: overall.falseCount,
       percentage: overall.falsePercentage,
       barClass: 'bg-rose-500',
+      color: '#f43f5e',
     },
     {
       key: 'null',
@@ -124,13 +126,33 @@ const Home = () => {
       count: overall.nullCount,
       percentage: overall.nullPercentage,
       barClass: 'bg-amber-500',
+      color: '#f59e0b',
     },
   ];
 
+  const pieBackground = useMemo(() => {
+    if ((overall.total ?? 0) === 0) {
+      return 'conic-gradient(#e2e8f0 0 100%)';
+    }
+
+    let currentPercentage = 0;
+    const segments = distributionRows.map((row) => {
+      const value = clampPercentage(row.percentage);
+      const start = currentPercentage;
+      currentPercentage += value;
+      return `${row.color} ${start}% ${currentPercentage}%`;
+    });
+
+    if (currentPercentage < 100) {
+      segments.push(`#e2e8f0 ${currentPercentage}% 100%`);
+    }
+
+    return `conic-gradient(${segments.join(', ')})`;
+  }, [distributionRows, overall.total]);
+
   return (
-    <div className="space-y-6 fade-in">
+    <div className="app-page fade-in space-y-6">
       <section className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-zinc-800 to-red-900 p-6 text-white shadow-lg sm:p-8">
-        <div className="absolute -top-16 right-0 h-48 w-48 rounded-full bg-red-500/25 blur-3xl" />
         <div className="absolute -bottom-20 left-8 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
 
         <div className="relative flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -145,14 +167,7 @@ const Home = () => {
             </p>
           </div>
 
-          <div className="rounded-2xl border border-white/20 bg-black/20 p-3 text-xs text-zinc-100 sm:text-sm">
-            <p>
-              Intervallo API: {formatApiDateTime(stats?.startDate)} - {formatApiDateTime(stats?.endDate)}
-            </p>
-            <p className="mt-1 text-zinc-300">
-              Combinazioni disponibili: {formatCount(stats?.combinationsCount ?? 0)}
-            </p>
-          </div>
+        
         </div>
       </section>
 
@@ -241,27 +256,54 @@ const Home = () => {
             Percentuali calcolate sul totale acquisizioni nel periodo selezionato.
           </p>
 
-          <div className="mt-5 space-y-4">
-            {distributionRows.map((row) => (
-              <div key={row.key} className="space-y-1.5">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="font-medium text-gray-700">{row.label}</span>
-                  <span className="text-gray-500">
-                    {formatCount(row.count)} ({formatPercentage(row.percentage)})
-                  </span>
+          <div className="mt-5 grid grid-cols-1 gap-6 lg:grid-cols-[1.25fr_0.9fr] lg:items-center">
+            <div className="space-y-4">
+              {distributionRows.map((row) => (
+                <div key={row.key} className="space-y-1.5">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-medium text-gray-700">{row.label}</span>
+                    <span className="text-gray-500">
+                      {formatCount(row.count)} ({formatPercentage(row.percentage)})
+                    </span>
+                  </div>
+                  <div className="h-2.5 w-full overflow-hidden rounded-full bg-gray-100">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${row.barClass}`}
+                      style={{ width: `${clampPercentage(row.percentage)}%` }}
+                    />
+                  </div>
                 </div>
-                <div className="h-2.5 w-full overflow-hidden rounded-full bg-gray-100">
-                  <div
-                    className={`h-full rounded-full transition-all duration-500 ${row.barClass}`}
-                    style={{ width: `${clampPercentage(row.percentage)}%` }}
-                  />
+              ))}
+            </div>
+
+            <div className="flex flex-col items-center">
+              <div
+                className="relative h-44 w-44 rounded-full ring-1 ring-slate-200"
+                style={{ backgroundImage: pieBackground }}
+              >
+                <div className="absolute inset-[23%] flex items-center justify-center rounded-full bg-white shadow-inner">
+                  <div className="text-center">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Totale</p>
+                    <p className="text-lg font-bold text-slate-900">{formatCount(overall.total)}</p>
+                  </div>
                 </div>
               </div>
-            ))}
+
+              <div className="mt-4 w-full max-w-[220px] space-y-2">
+                {distributionRows.map((row) => (
+                  <div key={`${row.key}-legend`} className="flex items-center justify-between text-xs">
+                    <span className="inline-flex items-center gap-2 text-slate-600">
+                      <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: row.color }} />
+                      {row.label}
+                    </span>
+                    <span className="font-semibold text-slate-700">{formatPercentage(row.percentage)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </article>
-
-        <article className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-100 xl:col-span-3">
+     <article className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-100 xl:col-span-3">
           <h3 className="text-lg font-semibold text-slate-900">Dettaglio Combinazioni</h3>
           <p className="mt-1 text-sm text-gray-500">
             Breakdown per codLineaProd e codPostazione.
@@ -312,6 +354,7 @@ const Home = () => {
             </div>
           )}
         </article>
+     
       </section>
     </div>
   );
