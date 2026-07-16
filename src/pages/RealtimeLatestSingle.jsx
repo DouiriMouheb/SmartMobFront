@@ -118,8 +118,8 @@ const RealtimeLatestSingle = () => {
       return { color: 'bg-gray-400', text: 'NON TESTATO', icon: '-' };
     }
     return esito
-      ? { color: 'bg-green-500', text: 'APPROVATO', icon: '✓' }
-      : { color: 'bg-red-500', text: 'RESPINTO', icon: '✗' };
+      ? { color: 'bg-red-500', text: 'K.O', icon: '✗' }
+      : { color: 'bg-green-500', text: 'O.K', icon: '✓' };
   };
 
   const formatDifferentValue = (value) => {
@@ -308,24 +308,24 @@ const RealtimeLatestSingle = () => {
 
                     <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                       <label className="block text-base font-semibold text-gray-700 mb-3">
-                        Differenze Lati
+                      Indici calcolati
                       </label>
                       <div className="overflow-x-auto">
                         <div className="grid grid-cols-4 gap-2 min-w-[32rem]">
                           <div className="bg-white border border-gray-200 rounded p-2">
-                            <p className="text-xs text-gray-500 mb-1">DALD</p>
+                            <p className="text-xs text-gray-500 mb-1">ROTAZIONE DESTRA</p>
                             <p className="text-sm font-semibold text-gray-900">{formatDifferentValue(latestData.rightSideAngleDifferent)}</p>
                           </div>
                           <div className="bg-white border border-gray-200 rounded p-2">
-                            <p className="text-xs text-gray-500 mb-1">DDLD</p>
+                            <p className="text-xs text-gray-500 mb-1">DISALLINEAMENTO DESTRO</p>
                             <p className="text-sm font-semibold text-gray-900">{formatDifferentValue(latestData.rightSideMisalignmentDifferent)}</p>
                           </div>
                           <div className="bg-white border border-gray-200 rounded p-2">
-                            <p className="text-xs text-gray-500 mb-1">DALS</p>
+                            <p className="text-xs text-gray-500 mb-1">ROTAZIONE SINISTRA</p>
                             <p className="text-sm font-semibold text-gray-900">{formatDifferentValue(latestData.leftSideAngleDifferent)}</p>
                           </div>
                           <div className="bg-white border border-gray-200 rounded p-2">
-                            <p className="text-xs text-gray-500 mb-1">DDLS</p>
+                            <p className="text-xs text-gray-500 mb-1">DISALLINEAMENTO SINISTRO</p>
                             <p className="text-sm font-semibold text-gray-900">{formatDifferentValue(latestData.leftSideMisalignmentDifferent)}</p>
                           </div>
                         </div>
@@ -439,30 +439,25 @@ const RealtimeLatestSingle = () => {
                       <p className="text-sm font-semibold text-gray-900">{latestData.codicE_ORDINE || 'N/A'}</p>
                     </div>
                   </div>
+               
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Scostamento CQ</label>
-                    <div className="bg-gray-50 p-2 rounded">
-                      <p className="text-sm font-semibold text-gray-900">{latestData.scostamentO_CQ_ARTICOLO}%</p>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Differenze Lati</label>
+                    <label className="block text-xs font-medium text-gray-600 mb-1"></label>
                     <div className="overflow-x-auto">
                       <div className="grid grid-cols-4 gap-2 min-w-[32rem]">
                         <div className="bg-gray-50 p-2 rounded border border-gray-200">
-                          <p className="text-xs text-gray-500 mb-1">DALD</p>
+                          <p className="text-xs text-gray-500 mb-1">ROTAZIONE DESTRA</p>
                           <p className="text-sm font-semibold text-gray-900">{formatDifferentValue(latestData.rightSideAngleDifferent)}</p>
                         </div>
                         <div className="bg-gray-50 p-2 rounded border border-gray-200">
-                          <p className="text-xs text-gray-500 mb-1">DDLD</p>
+                          <p className="text-xs text-gray-500 mb-1">DISALLINEAMENTO DESTRO</p>
                           <p className="text-sm font-semibold text-gray-900">{formatDifferentValue(latestData.rightSideMisalignmentDifferent)}</p>
                         </div>
                         <div className="bg-gray-50 p-2 rounded border border-gray-200">
-                          <p className="text-xs text-gray-500 mb-1">DALS</p>
+                          <p className="text-xs text-gray-500 mb-1">ROTAZIONE SINISTRA</p>
                           <p className="text-sm font-semibold text-gray-900">{formatDifferentValue(latestData.leftSideAngleDifferent)}</p>
                         </div>
                         <div className="bg-gray-50 p-2 rounded border border-gray-200">
-                          <p className="text-xs text-gray-500 mb-1">DDLS</p>
+                          <p className="text-xs text-gray-500 mb-1">DISALLINEAMENTO SINISTRO</p>
                           <p className="text-sm font-semibold text-gray-900">{formatDifferentValue(latestData.leftSideMisalignmentDifferent)}</p>
                         </div>
                       </div>

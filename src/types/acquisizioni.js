@@ -25,6 +25,8 @@
  * @property {boolean|null} [rightSideMisalignmentDifferent]
  * @property {boolean|null} [leftSideAngleDifferent]
  * @property {boolean|null} [leftSideMisalignmentDifferent]
+ * @property {boolean|null} [checkedByUser]
+ * @property {string} [userNotes]
  * @property {string} [dtIns]
  * @property {string} [dtAgg]
  * @property {boolean|null} [abilitA_CQ]

@@ -64,6 +64,14 @@ export const normalizeAcquisizioneRecord = (item) => {
       ?? item.LEFT_SIDE_MISALIGNMENT_DIFFERENT
       ?? item.left_side_misalignment_different
       ?? null,
+    checkedByUser: item.checkedByUser
+      ?? item.checked_by_user
+      ?? item.checkeD_BY_USER
+      ?? null,
+    userNotes: item.userNotes
+      ?? item.user_notes
+      ?? item.useR_NOTES
+      ?? '',
     dT_INS: item.dT_INS ?? item.dtIns ?? null,
     dT_AGG: item.dT_AGG ?? item.dtAgg ?? null,
   };

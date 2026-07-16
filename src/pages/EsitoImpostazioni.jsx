@@ -9,19 +9,19 @@ import { showError, showSuccess } from '../services/toastService';
 const FIELD_CONFIG = [
   {
     key: 'rightSideAngleDifferent',
-    fullName: 'Differenza Angolo Lato Destro',
+    fullName: 'ROTAZIONE DESTRA',
   },
   {
     key: 'rightSideMisalignmentDifferent',
-    fullName: 'Differenza Disallineamento Lato Destro',
+    fullName: 'DISALLINEAMENTO DESTRO',
   },
   {
     key: 'leftSideAngleDifferent',
-    fullName: 'Differenza Angolo Lato Sinistro',
+    fullName: 'ROTAZIONE SINISTRA',
   },
   {
     key: 'leftSideMisalignmentDifferent',
-    fullName: 'Differenza Disallineamento Lato Sinistro',
+    fullName: 'DISALLINEAMENTO SINISTRO',
   },
 ];
 
@@ -203,10 +203,10 @@ const EsitoImpostazioni = () => {
       <div className="app-page-header">
         <div className="app-page-title-row">
           <SlidersHorizontal className="w-6 h-6 sm:w-8 sm:h-8 text-red-700" />
-          <h1 className="app-page-title">Esito Impostazioni</h1>
+          <h1 className="app-page-title">Soglie Collo Nudo</h1>
         </div>
         <p className="app-page-subtitle">
-          Gestisci i valori di soglia per l&apos;esito delle differenze lato destro e sinistro.
+         Imposta i valori di soglia geometrici per il controllo qualità del collo nudo. Se almeno un indice supera il valore di soglia, il collo viene considerato KO
         </p>
       </div>
 

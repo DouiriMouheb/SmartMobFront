@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Database, ChevronDown, Loader2, AlertCircle, Package, ChevronLeft, ChevronRight, Search, X, FileBox, Newspaper } from 'lucide-react';
 import { useLineePostazioni } from '../hooks/useLineePostazioni';
 import { useAcquisizioniFilter } from '../hooks/useAcquisizioniFilter';
+import Modal from '../components/Modal';
+import acquisizioniService from '../services/acquisizioniService';
+import { showError } from '../services/toastService';
 
 const Acquisizioni = () => {
   const [selectedLinea, setSelectedLinea] = useState('');
@@ -13,6 +16,13 @@ const Acquisizioni = () => {
 
   // Search state
   const [searchTerm, setSearchTerm] = useState('');
+
+  const [reviewState, setReviewState] = useState({});
+  const [reviewBase, setReviewBase] = useState({});
+  const [savingReview, setSavingReview] = useState({});
+
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [selectedAcquisizione, setSelectedAcquisizione] = useState(null);
 
   // Use the hook to get API data
   const { loading, error, getLinee, getPostazioniForLinea } = useLineePostazioni();
@@ -38,20 +48,43 @@ const Acquisizioni = () => {
     setCurrentPage(1);
   }, [selectedLinea, selectedPostazione, itemsPerPage, searchTerm]);
 
+  useEffect(() => {
+    setReviewState({});
+    setReviewBase({});
+    setSavingReview({});
+  }, [selectedLinea, selectedPostazione]);
+
+  useEffect(() => {
+    setReviewBase(() => {
+      const next = {};
+
+      acquisizioniData.forEach((item) => {
+        next[item.id] = {
+          checkedByUser: item.checkedByUser ?? null,
+          userNotes: item.userNotes ?? '',
+        };
+      });
+
+      return next;
+    });
+  }, [acquisizioniData]);
+
   const getEsitoLabel = (esito) => {
-    if (esito === null || esito === undefined) {
-      return 'non testato';
+    if (esito === null || esito === undefined || esito === '') {
+      return '-';
     }
 
-    return esito ? 'positivo' : 'negativo';
+    // 0 => positivo, 1 => negativo
+    return Number(esito) === 0 ? 'OK' : 'KO';
   };
 
   const getEsitoBadgeClasses = (esito, mobile = false) => {
-    if (esito === null || esito === undefined) {
-      return mobile ? 'bg-gray-500 text-white shadow-sm' : 'bg-gray-100 text-gray-800';
+    if (esito === null || esito === undefined || esito === '') {
+      return mobile ? 'bg-gray-400 text-white shadow-sm' : 'bg-gray-100 text-gray-500';
     }
 
-    if (esito) {
+    // 0 => positivo (verde), 1 => negativo (rosso)
+    if (Number(esito) === 0) {
       return mobile ? 'bg-green-500 text-white shadow-sm' : 'bg-green-100 text-green-800';
     }
 
@@ -60,6 +93,9 @@ const Acquisizioni = () => {
 
   const formatEsitoLabel = (esito) => {
     const label = getEsitoLabel(esito);
+    if (label === '-') {
+      return '-';
+    }
     return `${label.charAt(0).toUpperCase()}${label.slice(1)}`;
   };
 
@@ -73,6 +109,207 @@ const Acquisizioni = () => {
     }
 
     return String(value);
+  };
+
+  const formatDateTime = (value) => {
+    if (!value) {
+      return 'N/A';
+    }
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return String(value);
+    }
+
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+  };
+
+  const getPhotoValue = (item, field) => {
+    if (!item) {
+      return null;
+    }
+
+    if (field === 'superiore') {
+      return item.fotoSuperiore ?? item.fotO_SUPERIORE ?? null;
+    }
+
+    if (field === 'frontale') {
+      return item.fotoFrontale ?? item.fotO_FRONTALE ?? null;
+    }
+
+    return null;
+  };
+
+  const handleOpenDetails = (item) => {
+    setSelectedAcquisizione(item);
+    setDetailsOpen(true);
+  };
+
+  const getReviewLabel = (value) => {
+    if (value === true) {
+      return 'approvato';
+    }
+
+    if (value === false) {
+      return 'non approvato';
+    }
+
+    return 'non verificato';
+  };
+
+  const reviewOptions = [
+    { value: true, label: 'Si', activeClass: 'bg-green-600 text-white' },
+    { value: null, label: '-', activeClass: 'bg-gray-400 text-white' },
+    { value: false, label: 'No', activeClass: 'bg-red-600 text-white' },
+  ];
+
+  const getReviewField = (itemId, field, fallback) => {
+    if (reviewState[itemId] && Object.prototype.hasOwnProperty.call(reviewState[itemId], field)) {
+      return reviewState[itemId][field];
+    }
+
+    if (reviewBase[itemId] && Object.prototype.hasOwnProperty.call(reviewBase[itemId], field)) {
+      return reviewBase[itemId][field];
+    }
+
+    return fallback;
+  };
+
+  const getCheckedByUser = (item) => (
+    getReviewField(item.id, 'checkedByUser', item.checkedByUser ?? null)
+  );
+
+  const getUserNotes = (item) => (
+    getReviewField(item.id, 'userNotes', item.userNotes ?? '')
+  );
+
+  const setReviewField = (itemId, field, value) => {
+    setReviewState((prev) => ({
+      ...prev,
+      [itemId]: {
+        ...prev[itemId],
+        [field]: value,
+      },
+    }));
+  };
+
+  const handleUserReviewSave = async (item, updates = {}) => {
+    const hasCheckedUpdate = Object.prototype.hasOwnProperty.call(updates, 'checkedByUser');
+    const hasNotesUpdate = Object.prototype.hasOwnProperty.call(updates, 'userNotes');
+
+    const nextCheckedByUser = hasCheckedUpdate
+      ? updates.checkedByUser
+      : getReviewField(item.id, 'checkedByUser', item.checkedByUser ?? null);
+
+    const nextUserNotes = hasNotesUpdate
+      ? updates.userNotes
+      : getReviewField(item.id, 'userNotes', item.userNotes ?? '');
+
+    const base = reviewBase[item.id] || {
+      checkedByUser: item.checkedByUser ?? null,
+      userNotes: item.userNotes ?? '',
+    };
+
+    if (base.checkedByUser === nextCheckedByUser && base.userNotes === nextUserNotes) {
+      return;
+    }
+
+    setSavingReview((prev) => ({ ...prev, [item.id]: true }));
+    setReviewState((prev) => ({
+      ...prev,
+      [item.id]: {
+        ...prev[item.id],
+        checkedByUser: nextCheckedByUser,
+        userNotes: nextUserNotes,
+      },
+    }));
+
+    const result = await acquisizioniService.updateUserReview(item.id, {
+      checkedByUser: nextCheckedByUser,
+      userNotes: nextUserNotes,
+    });
+
+    setSavingReview((prev) => ({ ...prev, [item.id]: false }));
+
+    if (!result.success) {
+      showError(result.message || 'Errore aggiornamento revisione utente');
+      setReviewState((prev) => {
+        const next = { ...prev };
+        delete next[item.id];
+        return next;
+      });
+      return;
+    }
+
+    setReviewBase((prev) => ({
+      ...prev,
+      [item.id]: {
+        checkedByUser: nextCheckedByUser,
+        userNotes: nextUserNotes,
+      },
+    }));
+    setReviewState((prev) => {
+      const next = { ...prev };
+      delete next[item.id];
+      return next;
+    });
+  };
+
+  const handleCloseDetails = () => {
+    if (selectedAcquisizione && !savingReview[selectedAcquisizione.id]) {
+      handleUserReviewSave(selectedAcquisizione, {
+        checkedByUser: getCheckedByUser(selectedAcquisizione),
+        userNotes: getUserNotes(selectedAcquisizione),
+      });
+    }
+
+    setDetailsOpen(false);
+    setSelectedAcquisizione(null);
+  };
+
+  const selectedFotoSuperiore = selectedAcquisizione
+    ? getPhotoValue(selectedAcquisizione, 'superiore')
+    : null;
+  const selectedFotoFrontale = selectedAcquisizione
+    ? getPhotoValue(selectedAcquisizione, 'frontale')
+    : null;
+
+  const renderReviewToggle = (item) => {
+    const checkedByUser = getCheckedByUser(item);
+    const isSaving = Boolean(savingReview[item.id]);
+
+    return (
+      <div className="inline-flex rounded-lg border border-gray-300 overflow-hidden bg-white">
+        {reviewOptions.map((option, index) => {
+          const isActive = option.value === checkedByUser
+            || (option.value === null && (checkedByUser === null || checkedByUser === undefined));
+          const activeClass = option.activeClass;
+          const inactiveClass = 'text-gray-600 hover:bg-gray-50';
+          const separator = index < reviewOptions.length - 1 ? 'border-r border-gray-300' : '';
+
+          return (
+            <button
+              key={option.label}
+              type="button"
+              className={`px-2 py-1 text-xs font-medium transition ${separator} ${isActive ? activeClass : inactiveClass} ${isSaving ? 'cursor-not-allowed opacity-60' : ''}`}
+              onClick={() => handleUserReviewSave(item, { checkedByUser: option.value })}
+              aria-pressed={isActive}
+              aria-label={`Approvazione utente: ${option.label === '-' ? 'Non verificato' : option.label}`}
+              title={option.label === '-' ? 'Non verificato' : option.label}
+              disabled={isSaving}
+            >
+              {option.label}
+            </button>
+          );
+        })}
+      </div>
+    );
   };
 
   // Filter data based on search term
@@ -89,7 +326,9 @@ const Acquisizioni = () => {
       formatDifferentValue(item.rightSideAngleDifferent).toLowerCase().includes(searchLower) ||
       formatDifferentValue(item.rightSideMisalignmentDifferent).toLowerCase().includes(searchLower) ||
       formatDifferentValue(item.leftSideAngleDifferent).toLowerCase().includes(searchLower) ||
-      formatDifferentValue(item.leftSideMisalignmentDifferent).toLowerCase().includes(searchLower)
+      formatDifferentValue(item.leftSideMisalignmentDifferent).toLowerCase().includes(searchLower) ||
+      getReviewLabel(item.checkedByUser).includes(searchLower) ||
+      item.userNotes?.toLowerCase().includes(searchLower)
     );
   });
 
@@ -110,12 +349,13 @@ const Acquisizioni = () => {
   };
 
   return (
+    <>
     <div className="app-page">
       {/* Header */}
       <div className="app-page-header">
         <div className="app-page-title-row">
           <Database className="w-6 h-6 sm:w-8 sm:h-8 text-red-700" />
-          <h1 className="app-page-title">Acquisizione</h1>
+          <h1 className="app-page-title">Acquisizioni</h1>
         </div>
         <p className="app-page-subtitle">Gestisci le acquisizioni del sistema</p>
 
@@ -306,9 +546,6 @@ const Acquisizioni = () => {
                           <thead className="bg-gray-50 sticky top-0 z-10">
                             <tr>
                               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                ID
-                              </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Codice Articolo
                               </th>
                               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -318,28 +555,25 @@ const Acquisizioni = () => {
                                 Esito CQ
                               </th>
                               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Scostamento
+                                Data Inserimento
                               </th>
                               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                <span title="Differenza Angolo Lato Destro" className="cursor-help">DALD</span>
+                                Rotazione Destra
                               </th>
                               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                <span title="Differenza Disallineamento Lato Destro" className="cursor-help">DDLD</span>
+                                Disallineamento Destro
                               </th>
                               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                <span title="Differenza Angolo Lato Sinistro" className="cursor-help">DALS</span>
+                                Rotazione Sinistra
                               </th>
                               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                <span title="Differenza Disallineamento Lato Sinistro" className="cursor-help">DDLS</span>
+                                Disallineamento Sinistro
                               </th>
                             </tr>
                           </thead>
                           <tbody className="bg-white divide-y divide-gray-200">
                             {currentItems.map((item) => (
-                              <tr key={item.id} className="hover:bg-gray-50">
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                  {item.id}
-                                </td>
+                              <tr key={item.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => handleOpenDetails(item)}>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                   {item.codicE_ARTICOLO}
                                 </td>
@@ -352,7 +586,7 @@ const Acquisizioni = () => {
                                   </span>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                  {item.scostamentO_CQ_ARTICOLO}%
+                                  {formatDateTime(item.dT_INS)}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                   {formatDifferentValue(item.rightSideAngleDifferent)}
@@ -377,19 +611,23 @@ const Acquisizioni = () => {
                     <div className="md:hidden flex-1 overflow-y-auto px-1">
                       <div className="space-y-3 pb-4">
                         {currentItems.map((item) => (
-                          <div key={item.id} className="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all duration-200">
+                          <div
+                            key={item.id}
+                            className="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
+                            onClick={() => handleOpenDetails(item)}
+                          >
                             {/* Status Header */}
                             <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-4 py-3 rounded-t-lg border-b border-gray-200">
                               <div className="flex items-center justify-between">
                                 <span className={`inline-flex items-center px-3 py-1.5 text-xs font-semibold rounded-lg ${getEsitoBadgeClasses(item.esitO_CQ_ARTICOLO, true)}`}>
                                   {item.esitO_CQ_ARTICOLO === null || item.esitO_CQ_ARTICOLO === undefined
-                                    ? '• Non testato'
-                                    : item.esitO_CQ_ARTICOLO
+                                    ? '• -'
+                                    : Number(item.esitO_CQ_ARTICOLO) === 0
                                       ? '✓ Positivo'
                                       : '✗ Negativo'}
                                 </span>
                                 <span className="text-xs text-gray-500 font-medium">
-                                  ID: {item.id}
+                                  {formatDateTime(item.dT_INS)}
                                 </span>
                               </div>
                             </div>
@@ -399,22 +637,22 @@ const Acquisizioni = () => {
                               {/* Side Difference Values */}
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                 <div className="py-2 px-3 bg-gray-50 rounded-lg border border-gray-200">
-                                  <p className="text-xs text-gray-500 mb-1">Right Side Angle Different</p>
+                                  <p className="text-xs text-gray-500 mb-1">Rotazione Destra</p>
                                   <p className="text-sm font-semibold text-gray-800">{formatDifferentValue(item.rightSideAngleDifferent)}</p>
                                 </div>
 
                                 <div className="py-2 px-3 bg-gray-50 rounded-lg border border-gray-200">
-                                  <p className="text-xs text-gray-500 mb-1">Right Side Misalignment Different</p>
+                                  <p className="text-xs text-gray-500 mb-1">Disallineamento Destro</p>
                                   <p className="text-sm font-semibold text-gray-800">{formatDifferentValue(item.rightSideMisalignmentDifferent)}</p>
                                 </div>
 
                                 <div className="py-2 px-3 bg-gray-50 rounded-lg border border-gray-200">
-                                  <p className="text-xs text-gray-500 mb-1">Left Side Angle Different</p>
+                                  <p className="text-xs text-gray-500 mb-1">Rotazione Sinistra</p>
                                   <p className="text-sm font-semibold text-gray-800">{formatDifferentValue(item.leftSideAngleDifferent)}</p>
                                 </div>
 
                                 <div className="py-2 px-3 bg-gray-50 rounded-lg border border-gray-200">
-                                  <p className="text-xs text-gray-500 mb-1">Left Side Misalignment Different</p>
+                                  <p className="text-xs text-gray-500 mb-1">Disallineamento Sinistro</p>
                                   <p className="text-sm font-semibold text-gray-800">{formatDifferentValue(item.leftSideMisalignmentDifferent)}</p>
                                 </div>
                               </div>
@@ -440,15 +678,8 @@ const Acquisizioni = () => {
                                     {item.codicE_ARTICOLO}
                                   </span>
                                 </div>
-
-                                {/* Percentage Badge */}
-                                <div className="flex justify-center pt-1">
-                                  <span className="flex items-center justify-between py-2 px-3 bg-red-50 rounded-lg border border-red-100">
-    
-                                    {item.scostamentO_CQ_ARTICOLO}%
-                                  </span>
-                                </div>
                               </div>
+
                             </div>
                           </div>
                         ))}
@@ -561,6 +792,186 @@ const Acquisizioni = () => {
         </div>
       )}
     </div>
+    <Modal
+      open={detailsOpen}
+      title={selectedAcquisizione ? `Dettagli acquisizione #${selectedAcquisizione.id}` : 'Dettagli acquisizione'}
+      onBackdropClick={handleCloseDetails}
+      size="2xl"
+      className="max-w-5xl w-[95vw]"
+      footer={(
+        <button
+          type="button"
+          className="px-3 py-1 rounded bg-gray-300 hover:bg-gray-400"
+          onClick={handleCloseDetails}
+        >
+          Chiudi
+        </button>
+      )}
+    >
+      {selectedAcquisizione && (
+        <div className="space-y-5">
+          {/* Informazioni generali */}
+          <section>
+            <h4 className="mb-2 text-xs font-bold uppercase tracking-wide text-gray-400">Informazioni generali</h4>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">ID</p>
+                <div className="mt-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-semibold text-gray-900">
+                  {selectedAcquisizione.id}
+                </div>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Codice Articolo</p>
+                <div className="mt-1 rounded-lg border border-gray-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-800">
+                  {selectedAcquisizione.codicE_ARTICOLO || 'N/A'}
+                </div>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Codice Ordine</p>
+                <div className="mt-1 rounded-lg border border-gray-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-800">
+                  {selectedAcquisizione.codicE_ORDINE || 'N/A'}
+                </div>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Linea</p>
+                <div className="mt-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-semibold text-gray-900">
+                  {formatDifferentValue(selectedAcquisizione.coD_LINEA)}
+                </div>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Postazione</p>
+                <div className="mt-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-semibold text-gray-900">
+                  {formatDifferentValue(selectedAcquisizione.coD_POSTAZIONE)}
+                </div>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Esito CQ</p>
+                <div className="mt-1 flex items-center rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+                  <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${getEsitoBadgeClasses(selectedAcquisizione.esitO_CQ_ARTICOLO)}`}>
+                    {formatEsitoLabel(selectedAcquisizione.esitO_CQ_ARTICOLO)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Misurazioni */}
+          <section>
+            <h4 className="mb-2 text-xs font-bold uppercase tracking-wide text-gray-400">Misurazioni</h4>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Rotazione Destra</p>
+                <div className="mt-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-semibold text-gray-900">
+                  {formatDifferentValue(selectedAcquisizione.rightSideAngleDifferent)}
+                </div>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Disallineamento Destro</p>
+                <div className="mt-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-semibold text-gray-900">
+                  {formatDifferentValue(selectedAcquisizione.rightSideMisalignmentDifferent)}
+                </div>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Rotazione Sinistra</p>
+                <div className="mt-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-semibold text-gray-900">
+                  {formatDifferentValue(selectedAcquisizione.leftSideAngleDifferent)}
+                </div>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Disallineamento Sinistro</p>
+                <div className="mt-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-semibold text-gray-900">
+                  {formatDifferentValue(selectedAcquisizione.leftSideMisalignmentDifferent)}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Foto */}
+          <section>
+            <h4 className="mb-2 text-xs font-bold uppercase tracking-wide text-gray-400">Foto</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Foto Superiore</p>
+                {selectedFotoSuperiore ? (
+                  <div className="mt-2 overflow-hidden rounded-lg border border-gray-200 bg-white">
+                    <img
+                      src={selectedFotoSuperiore}
+                      alt="Foto superiore"
+                      className="h-52 w-full object-contain bg-gray-100"
+                    />
+                    <div className="border-t border-gray-200 px-3 py-2 text-xs text-gray-600 break-all">
+                      {selectedFotoSuperiore}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-6 text-sm text-gray-500 text-center">
+                    Nessuna immagine disponibile
+                  </div>
+                )}
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Foto Frontale</p>
+                {selectedFotoFrontale ? (
+                  <div className="mt-2 overflow-hidden rounded-lg border border-gray-200 bg-white">
+                    <img
+                      src={selectedFotoFrontale}
+                      alt="Foto frontale"
+                      className="h-52 w-full object-contain bg-gray-100"
+                    />
+                    <div className="border-t border-gray-200 px-3 py-2 text-xs text-gray-600 break-all">
+                      {selectedFotoFrontale}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-6 text-sm text-gray-500 text-center">
+                    Nessuna immagine disponibile
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+
+          {/* Date */}
+          <section>
+            <h4 className="mb-2 text-xs font-bold uppercase tracking-wide text-gray-400">Date</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Data Inserimento</p>
+                <div className="mt-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-semibold text-gray-900">
+                  {formatDateTime(selectedAcquisizione.dT_INS)}
+                </div>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Data Aggiornamento</p>
+                <div className="mt-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-semibold text-gray-900">
+                  {formatDateTime(selectedAcquisizione.dT_AGG)}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Revisione Utente */}
+          <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 space-y-3">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                Revisione Utente
+              </span>
+              {renderReviewToggle(selectedAcquisizione)}
+            </div>
+            <textarea
+              value={getUserNotes(selectedAcquisizione)}
+              onChange={(e) => setReviewField(selectedAcquisizione.id, 'userNotes', e.target.value)}
+              onBlur={(e) => handleUserReviewSave(selectedAcquisizione, { userNotes: e.target.value })}
+              className="w-full min-h-[96px] resize-y rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-red-400 focus:ring-1 focus:ring-red-300"
+              placeholder="Aggiungi una nota per questa acquisizione..."
+              aria-label="Note utente"
+              disabled={Boolean(savingReview[selectedAcquisizione.id])}
+            />
+          </div>
+        </div>
+      )}
+    </Modal>
+    </>
   );
 };
 

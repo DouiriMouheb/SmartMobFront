@@ -73,9 +73,10 @@ const Home = () => {
     },
     {
       key: 'positive',
-      label: 'Esito Positivo',
-      value: overall.trueCount,
-      subtitle: formatPercentage(overall.truePercentage),
+      label: 'Esito OK',
+      // esito 0 => OK: il backend FalseCount conta ESITO_CQ_ARTICOLO == false (0)
+      value: overall.falseCount,
+      subtitle: formatPercentage(overall.falsePercentage),
       icon: CheckCircle2,
       valueClass: 'text-emerald-700',
       iconBgClass: 'bg-emerald-100',
@@ -83,9 +84,10 @@ const Home = () => {
     },
     {
       key: 'negative',
-      label: 'Esito Negativo',
-      value: overall.falseCount,
-      subtitle: formatPercentage(overall.falsePercentage),
+      label: 'Esito KO',
+      // esito 1 => KO: il backend TrueCount conta ESITO_CQ_ARTICOLO == true (1)
+      value: overall.trueCount,
+      subtitle: formatPercentage(overall.truePercentage),
       icon: XCircle,
       valueClass: 'text-rose-700',
       iconBgClass: 'bg-rose-100',
@@ -105,18 +107,18 @@ const Home = () => {
 
   const distributionRows = [
     {
-      key: 'true',
-      label: 'Positivi',
-      count: overall.trueCount,
-      percentage: overall.truePercentage,
+      key: 'ok',
+      label: 'OK',
+      count: overall.falseCount,          // esito 0 => OK
+      percentage: overall.falsePercentage,
       barClass: 'bg-emerald-500',
       color: '#10b981',
     },
     {
-      key: 'false',
-      label: 'Negativi',
-      count: overall.falseCount,
-      percentage: overall.falsePercentage,
+      key: 'ko',
+      label: 'KO',
+      count: overall.trueCount,           // esito 1 => KO
+      percentage: overall.truePercentage,
       barClass: 'bg-rose-500',
       color: '#f43f5e',
     },
@@ -339,10 +341,10 @@ const Home = () => {
                         {formatCount(combination.total)}
                       </td>
                       <td className="whitespace-nowrap px-3 py-3 text-emerald-700">
-                        {formatCount(combination.trueCount)} ({formatPercentage(combination.truePercentage)})
+                        {formatCount(combination.falseCount)} ({formatPercentage(combination.falsePercentage)})
                       </td>
                       <td className="whitespace-nowrap px-3 py-3 text-rose-700">
-                        {formatCount(combination.falseCount)} ({formatPercentage(combination.falsePercentage)})
+                        {formatCount(combination.trueCount)} ({formatPercentage(combination.truePercentage)})
                       </td>
                       <td className="whitespace-nowrap px-3 py-3 text-amber-700">
                         {formatCount(combination.nullCount)} ({formatPercentage(combination.nullPercentage)})

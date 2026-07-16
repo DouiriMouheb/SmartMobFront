@@ -132,6 +132,40 @@ class AcquisizioniService {
     }
   }
 
+  // Update user review fields for acquisizione
+  async updateUserReview(id, { checkedByUser, userNotes }) {
+    try {
+      const response = await fetch(`${this.baseUrl}/api/Acquisizioni/${id}/user-review`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ checkedByUser, userNotes }),
+      });
+
+      let data = null;
+      try {
+        data = await response.json();
+      } catch {
+        data = null;
+      }
+
+      if (!response.ok) {
+        const message = data?.message || data?.error || data?.title || `HTTP error! status: ${response.status}`;
+        return { success: false, message };
+      }
+
+      return {
+        success: true,
+        data,
+        message: 'Revisione utente aggiornata con successo',
+      };
+    } catch (error) {
+      console.error('Error updating acquisizione user review:', error);
+      return { success: false, message: error.message || 'Errore aggiornamento revisione utente' };
+    }
+  }
+
   // Health check for the API
   async healthCheck() {
     try {

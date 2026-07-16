@@ -28,7 +28,7 @@ export default function Modal({
       onClick={handleBackdropClick}
     >
       <div
-        className={`w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl ${className || sizeClasses[size]} max-h-[90vh] min-h-fit flex flex-col`}
+        className={`w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl ${className || sizeClasses[size]} max-h-[90vh] min-h-0 flex flex-col`}
         onClick={(e) => e.stopPropagation()}
       >
         {showHeader && title && (

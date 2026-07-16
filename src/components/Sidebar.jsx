@@ -5,7 +5,7 @@ import { Menu, Home, Table, X, ShieldCheck, Monitor, Database, Radio, SlidersHor
 const navItems = [
   { to: '/', label: 'Home', icon: Home },
   { to: '/settings', label: 'Impostazioni', icon: Table },
-  { to: '/esito-impostazioni', label: 'Esito Impostazioni', icon: SlidersHorizontal },
+  { to: '/esito-impostazioni', label: 'Soglie Collo Nudo', icon: SlidersHorizontal },
   { to: '/acquisizioni', label: 'Acquisizioni', icon: Database },
   { to: '/controllo-qualita', label: 'Controllo Qualita', icon: ShieldCheck },
   { to: '/dispositivi-multimediali', label: 'Dispositivi Multimediali', icon: Monitor },

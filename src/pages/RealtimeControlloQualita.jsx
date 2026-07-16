@@ -193,7 +193,7 @@ const RealtimeControlloQualita = () => {
                 if (esito === null || esito === undefined) {
                   return 'bg-gray-400'; // Gray for null
                 }
-                return esito ? 'bg-green-500' : 'bg-red-500'; // Green for true, red for false
+                return esito ? 'bg-red-500' : 'bg-green-500'; // esito 0 => OK (verde), esito 1 => KO (rosso)
               };
 
               return (
@@ -247,7 +247,7 @@ const RealtimeControlloQualita = () => {
 
                       <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                         <label className="block text-base font-semibold text-gray-700 mb-3">
-                          Differenze Lati
+                         Indici calcolati
                         </label>
                         <div className="overflow-x-auto">
                           <div className="grid grid-cols-4 gap-2 min-w-[32rem]">
@@ -295,8 +295,8 @@ const RealtimeControlloQualita = () => {
                           {record.esitO_CQ_ARTICOLO === null || record.esitO_CQ_ARTICOLO === undefined
                             ? '-'
                             : record.esitO_CQ_ARTICOLO
-                              ? '✓'
-                              : '✗'
+                              ? '✗'
+                              : '✓'
                           }
                         </span>
                       </div>
@@ -304,8 +304,8 @@ const RealtimeControlloQualita = () => {
                         {record.esitO_CQ_ARTICOLO === null || record.esitO_CQ_ARTICOLO === undefined
                           ? 'NON TESTATO'
                           : record.esitO_CQ_ARTICOLO
-                            ? 'APPROVATO'
-                            : 'RESPINTO'
+                            ? 'RESPINTO'
+                            : 'APPROVATO'
                         }
                       </div>
                       <button
@@ -355,23 +355,23 @@ const RealtimeControlloQualita = () => {
                       className={`w-5 h-5 rounded-full flex items-center justify-center text-white font-bold text-xs ${selectedRecord.esitO_CQ_ARTICOLO === null || selectedRecord.esitO_CQ_ARTICOLO === undefined
                         ? 'bg-gray-400'
                         : selectedRecord.esitO_CQ_ARTICOLO
-                          ? 'bg-green-500'
-                          : 'bg-red-500'
+                          ? 'bg-red-500'
+                          : 'bg-green-500'
                         }`}
                     >
                       {selectedRecord.esitO_CQ_ARTICOLO === null || selectedRecord.esitO_CQ_ARTICOLO === undefined
                         ? '-'
                         : selectedRecord.esitO_CQ_ARTICOLO
-                          ? '✓'
-                          : '✗'
+                          ? '✗'
+                          : '✓'
                       }
                     </div>
                     <span className="text-sm font-bold">
                       {selectedRecord.esitO_CQ_ARTICOLO === null || selectedRecord.esitO_CQ_ARTICOLO === undefined
                         ? 'NON TESTATO'
                         : selectedRecord.esitO_CQ_ARTICOLO
-                          ? 'APPROVATO'
-                          : 'RESPINTO'
+                          ? 'RESPINTO'
+                          : 'APPROVATO'
                       }
                     </span>
                   </div>
@@ -405,7 +405,7 @@ const RealtimeControlloQualita = () => {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Differenze Lati</label>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Indici calcolati</label>
                     <div className="overflow-x-auto">
                       <div className="grid grid-cols-4 gap-2 min-w-[32rem]">
                         <div className="bg-gray-50 p-2 rounded border border-gray-200">
@@ -517,48 +517,6 @@ const RealtimeControlloQualita = () => {
     </div>
   </div>
 </div>
-
-
-
-              {/* Quality Control 
-              <div className="bg-white border border-gray-200 rounded-lg p-3">
-                <h4 className="text-sm font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-500" />
-                  Controllo Qualità
-                </h4>
-                <div className="space-y-2">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Abilita CQ</label>
-                    <div className="bg-gray-50 p-2 rounded">
-                      <div className="flex items-center gap-2">
-                        <div className={`w-3 h-3 rounded-full ${selectedRecord.abilitA_CQ ? 'bg-green-500' : 'bg-red-500'
-                          }`} />
-                        <p className="text-sm font-semibold text-gray-900">
-                          {selectedRecord.abilitA_CQ !== null ? (selectedRecord.abilitA_CQ ? 'Sì' : 'No') : 'N/A'}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Esito CQ</label>
-                    <div className={`p-2 rounded border ${selectedRecord.esitO_CQ_ARTICOLO === null || selectedRecord.esitO_CQ_ARTICOLO === undefined
-                        ? 'bg-gray-50 border-gray-300'
-                        : selectedRecord.esitO_CQ_ARTICOLO
-                          ? 'bg-green-50 border-green-300'
-                          : 'bg-red-50 border-red-300'
-                      }`}>
-                      <p className="text-sm font-semibold text-gray-900">
-                        {selectedRecord.esitO_CQ_ARTICOLO === null || selectedRecord.esitO_CQ_ARTICOLO === undefined
-                          ? 'Non Testato'
-                          : selectedRecord.esitO_CQ_ARTICOLO
-                            ? 'Approvato'
-                            : 'Respinto'
-                        }
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>*/}
             </div>
 
             {/* Technical Details - Compact Grid 
