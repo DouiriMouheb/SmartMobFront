@@ -18,6 +18,7 @@ import {
 import { useLineePostazioni } from '../hooks/useLineePostazioni';
 import Modal from '../components/Modal';
 import { normalizeSingleAcquisizione } from '../services/acquisizioniNormalizer';
+import { ESITO_STATE, resolveEsitoState } from '../services/esitoDisplay';
 
 const RealtimeLatestSingle = () => {
   const [selectedLinea, setSelectedLinea] = useState('');
@@ -113,13 +114,17 @@ const RealtimeLatestSingle = () => {
   };
 
   // Get quality status
-  const getQualityStatus = (esito) => {
-    if (esito === null || esito === undefined) {
-      return { color: 'bg-gray-400', text: 'NON TESTATO', icon: '-' };
+  // Regole in ../services/esitoDisplay: abilitA_CQ 0 => non testato,
+  // altrimenti esito 1 => O.K, esito 0 => K.O, esito null => non testato.
+  const getQualityStatus = (record) => {
+    switch (resolveEsitoState(record)) {
+      case ESITO_STATE.OK:
+        return { color: 'bg-green-500', text: 'O.K', icon: '✓' };
+      case ESITO_STATE.KO:
+        return { color: 'bg-red-500', text: 'K.O', icon: '✗' };
+      default:
+        return { color: 'bg-gray-400', text: 'NON TESTATO', icon: '-' };
     }
-    return esito
-      ? { color: 'bg-red-500', text: 'K.O', icon: '✗' }
-      : { color: 'bg-green-500', text: 'O.K', icon: '✓' };
   };
 
   const formatDifferentValue = (value) => {
@@ -349,15 +354,15 @@ const RealtimeLatestSingle = () => {
                       Esito CQ Articolo
                     </label>
                     <div
-                      className={`w-80 h-80 lg:w-96 lg:h-96 xl:w-[28rem] xl:h-[28rem] rounded-2xl ${getQualityStatus(latestData.esitO_CQ_ARTICOLO).color} 
+                      className={`w-80 h-80 lg:w-96 lg:h-96 xl:w-[28rem] xl:h-[28rem] rounded-2xl ${getQualityStatus(latestData).color} 
                         shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-105 hover:shadow-3xl`}
                     >
                       <span className="text-white font-bold text-6xl lg:text-7xl xl:text-8xl">
-                        {getQualityStatus(latestData.esitO_CQ_ARTICOLO).icon}
+                        {getQualityStatus(latestData).icon}
                       </span>
                     </div>
                     <div className="mt-4 text-lg font-semibold text-center text-gray-600">
-                      {getQualityStatus(latestData.esitO_CQ_ARTICOLO).text}
+                      {getQualityStatus(latestData).text}
                     </div>
                     <button
                       onClick={handleViewClick}
@@ -402,12 +407,12 @@ const RealtimeLatestSingle = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     <div
-                      className={`w-5 h-5 rounded-full flex items-center justify-center text-white font-bold text-xs ${getQualityStatus(latestData.esitO_CQ_ARTICOLO).color}`}
+                      className={`w-5 h-5 rounded-full flex items-center justify-center text-white font-bold text-xs ${getQualityStatus(latestData).color}`}
                     >
-                      {getQualityStatus(latestData.esitO_CQ_ARTICOLO).icon}
+                      {getQualityStatus(latestData).icon}
                     </div>
                     <span className="text-sm font-bold">
-                      {getQualityStatus(latestData.esitO_CQ_ARTICOLO).text}
+                      {getQualityStatus(latestData).text}
                     </span>
                   </div>
                 </div>

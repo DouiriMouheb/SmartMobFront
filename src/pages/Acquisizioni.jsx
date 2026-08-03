@@ -5,6 +5,7 @@ import { useAcquisizioniFilter } from '../hooks/useAcquisizioniFilter';
 import Modal from '../components/Modal';
 import acquisizioniService from '../services/acquisizioniService';
 import { showError } from '../services/toastService';
+import { ESITO_STATE, resolveEsitoState } from '../services/esitoDisplay';
 
 const Acquisizioni = () => {
   const [selectedLinea, setSelectedLinea] = useState('');
@@ -69,34 +70,39 @@ const Acquisizioni = () => {
     });
   }, [acquisizioniData]);
 
-  const getEsitoLabel = (esito) => {
-    if (esito === null || esito === undefined || esito === '') {
-      return '-';
+  // Regole in ../services/esitoDisplay: abilitA_CQ 0 => non testato,
+  // altrimenti esito 1 => OK, esito 0 => KO, esito null => non testato.
+  const getEsitoLabel = (record) => {
+    switch (resolveEsitoState(record)) {
+      case ESITO_STATE.OK:
+        return 'OK';
+      case ESITO_STATE.KO:
+        return 'KO';
+      default:
+        return '-';
     }
-
-    // 0 => positivo, 1 => negativo
-    return Number(esito) === 0 ? 'OK' : 'KO';
   };
 
-  const getEsitoBadgeClasses = (esito, mobile = false) => {
-    if (esito === null || esito === undefined || esito === '') {
-      return mobile ? 'bg-gray-400 text-white shadow-sm' : 'bg-gray-100 text-gray-500';
+  const getEsitoIcon = (record) => {
+    switch (resolveEsitoState(record)) {
+      case ESITO_STATE.OK:
+        return '✓';
+      case ESITO_STATE.KO:
+        return '✗';
+      default:
+        return '•';
     }
-
-    // 0 => positivo (verde), 1 => negativo (rosso)
-    if (Number(esito) === 0) {
-      return mobile ? 'bg-green-500 text-white shadow-sm' : 'bg-green-100 text-green-800';
-    }
-
-    return mobile ? 'bg-red-500 text-white shadow-sm' : 'bg-red-100 text-red-800';
   };
 
-  const formatEsitoLabel = (esito) => {
-    const label = getEsitoLabel(esito);
-    if (label === '-') {
-      return '-';
+  const getEsitoBadgeClasses = (record, mobile = false) => {
+    switch (resolveEsitoState(record)) {
+      case ESITO_STATE.OK:
+        return mobile ? 'bg-green-500 text-white shadow-sm' : 'bg-green-100 text-green-800';
+      case ESITO_STATE.KO:
+        return mobile ? 'bg-red-500 text-white shadow-sm' : 'bg-red-100 text-red-800';
+      default:
+        return mobile ? 'bg-gray-400 text-white shadow-sm' : 'bg-gray-100 text-gray-500';
     }
-    return `${label.charAt(0).toUpperCase()}${label.slice(1)}`;
   };
 
   const formatDifferentValue = (value) => {
@@ -321,7 +327,7 @@ const Acquisizioni = () => {
       item.id?.toString().toLowerCase().includes(searchLower) ||
       item.codicE_ARTICOLO?.toLowerCase().includes(searchLower) ||
       item.codicE_ORDINE?.toLowerCase().includes(searchLower) ||
-      getEsitoLabel(item.esitO_CQ_ARTICOLO).includes(searchLower) ||
+      getEsitoLabel(item).toLowerCase().includes(searchLower) ||
       item.scostamentO_CQ_ARTICOLO?.toString().includes(searchLower) ||
       formatDifferentValue(item.rightSideAngleDifferent).toLowerCase().includes(searchLower) ||
       formatDifferentValue(item.rightSideMisalignmentDifferent).toLowerCase().includes(searchLower) ||
@@ -581,8 +587,8 @@ const Acquisizioni = () => {
                                   {item.codicE_ORDINE}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getEsitoBadgeClasses(item.esitO_CQ_ARTICOLO)}`}>
-                                    {formatEsitoLabel(item.esitO_CQ_ARTICOLO)}
+                                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getEsitoBadgeClasses(item)}`}>
+                                    {getEsitoLabel(item)}
                                   </span>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -619,12 +625,8 @@ const Acquisizioni = () => {
                             {/* Status Header */}
                             <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-4 py-3 rounded-t-lg border-b border-gray-200">
                               <div className="flex items-center justify-between">
-                                <span className={`inline-flex items-center px-3 py-1.5 text-xs font-semibold rounded-lg ${getEsitoBadgeClasses(item.esitO_CQ_ARTICOLO, true)}`}>
-                                  {item.esitO_CQ_ARTICOLO === null || item.esitO_CQ_ARTICOLO === undefined
-                                    ? '• -'
-                                    : Number(item.esitO_CQ_ARTICOLO) === 0
-                                      ? '✓ Positivo'
-                                      : '✗ Negativo'}
+                                <span className={`inline-flex items-center px-3 py-1.5 text-xs font-semibold rounded-lg ${getEsitoBadgeClasses(item, true)}`}>
+                                  {`${getEsitoIcon(item)} ${getEsitoLabel(item)}`}
                                 </span>
                                 <span className="text-xs text-gray-500 font-medium">
                                   {formatDateTime(item.dT_INS)}
@@ -847,8 +849,8 @@ const Acquisizioni = () => {
               <div>
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Esito CQ</p>
                 <div className="mt-1 flex items-center rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
-                  <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${getEsitoBadgeClasses(selectedAcquisizione.esitO_CQ_ARTICOLO)}`}>
-                    {formatEsitoLabel(selectedAcquisizione.esitO_CQ_ARTICOLO)}
+                  <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${getEsitoBadgeClasses(selectedAcquisizione)}`}>
+                    {getEsitoLabel(selectedAcquisizione)}
                   </span>
                 </div>
               </div>

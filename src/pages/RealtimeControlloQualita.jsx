@@ -16,6 +16,43 @@ import {
 } from 'lucide-react';
 import useAcquisizioniRealtime from '../hooks/useAcquisizioniRealtime';
 import Modal from '../components/Modal';
+import { ESITO_STATE, resolveEsitoState } from '../services/esitoDisplay';
+
+// Regole in ../services/esitoDisplay: abilitA_CQ 0 => non testato,
+// altrimenti esito 1 => APPROVATO (verde), esito 0 => RESPINTO (rosso),
+// esito null => non testato.
+const getQualitySquareColor = (record) => {
+  switch (resolveEsitoState(record)) {
+    case ESITO_STATE.OK:
+      return 'bg-green-500';
+    case ESITO_STATE.KO:
+      return 'bg-red-500';
+    default:
+      return 'bg-gray-400';
+  }
+};
+
+const getQualityIcon = (record) => {
+  switch (resolveEsitoState(record)) {
+    case ESITO_STATE.OK:
+      return '✓';
+    case ESITO_STATE.KO:
+      return '✗';
+    default:
+      return '-';
+  }
+};
+
+const getQualityText = (record) => {
+  switch (resolveEsitoState(record)) {
+    case ESITO_STATE.OK:
+      return 'APPROVATO';
+    case ESITO_STATE.KO:
+      return 'RESPINTO';
+    default:
+      return 'NON TESTATO';
+  }
+};
 
 const RealtimeControlloQualita = () => {
   const [modalOpen, setModalOpen] = useState(false);
@@ -188,14 +225,6 @@ const RealtimeControlloQualita = () => {
         <div className="p-2 sm:p-4">
           <div className="grid grid-cols-1 gap-8">
             {acquisizioni.map((record, index) => {
-              // Determine the color of the quality indicator square
-              const getQualitySquareColor = (esito) => {
-                if (esito === null || esito === undefined) {
-                  return 'bg-gray-400'; // Gray for null
-                }
-                return esito ? 'bg-red-500' : 'bg-green-500'; // esito 0 => OK (verde), esito 1 => KO (rosso)
-              };
-
               return (
                 <div
                   key={record.id || index}
@@ -288,25 +317,15 @@ const RealtimeControlloQualita = () => {
                         Esito CQ Articolo
                       </label>
                       <div
-                        className={`w-80 h-80 lg:w-96 lg:h-96 xl:w-[28rem] xl:h-[28rem] rounded-2xl ${getQualitySquareColor(record.esitO_CQ_ARTICOLO)} 
+                        className={`w-80 h-80 lg:w-96 lg:h-96 xl:w-[28rem] xl:h-[28rem] rounded-2xl ${getQualitySquareColor(record)}
                           shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-105 hover:shadow-3xl`}
                       >
                         <span className="text-white font-bold text-6xl lg:text-7xl xl:text-8xl">
-                          {record.esitO_CQ_ARTICOLO === null || record.esitO_CQ_ARTICOLO === undefined
-                            ? '-'
-                            : record.esitO_CQ_ARTICOLO
-                              ? '✗'
-                              : '✓'
-                          }
+                          {getQualityIcon(record)}
                         </span>
                       </div>
                       <div className="mt-4 text-lg font-semibold text-center text-gray-600">
-                        {record.esitO_CQ_ARTICOLO === null || record.esitO_CQ_ARTICOLO === undefined
-                          ? 'NON TESTATO'
-                          : record.esitO_CQ_ARTICOLO
-                            ? 'RESPINTO'
-                            : 'APPROVATO'
-                        }
+                        {getQualityText(record)}
                       </div>
                       <button
                         onClick={() => handleViewClick(record)}
@@ -352,27 +371,12 @@ const RealtimeControlloQualita = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     <div
-                      className={`w-5 h-5 rounded-full flex items-center justify-center text-white font-bold text-xs ${selectedRecord.esitO_CQ_ARTICOLO === null || selectedRecord.esitO_CQ_ARTICOLO === undefined
-                        ? 'bg-gray-400'
-                        : selectedRecord.esitO_CQ_ARTICOLO
-                          ? 'bg-red-500'
-                          : 'bg-green-500'
-                        }`}
+                      className={`w-5 h-5 rounded-full flex items-center justify-center text-white font-bold text-xs ${getQualitySquareColor(selectedRecord)}`}
                     >
-                      {selectedRecord.esitO_CQ_ARTICOLO === null || selectedRecord.esitO_CQ_ARTICOLO === undefined
-                        ? '-'
-                        : selectedRecord.esitO_CQ_ARTICOLO
-                          ? '✗'
-                          : '✓'
-                      }
+                      {getQualityIcon(selectedRecord)}
                     </div>
                     <span className="text-sm font-bold">
-                      {selectedRecord.esitO_CQ_ARTICOLO === null || selectedRecord.esitO_CQ_ARTICOLO === undefined
-                        ? 'NON TESTATO'
-                        : selectedRecord.esitO_CQ_ARTICOLO
-                          ? 'RESPINTO'
-                          : 'APPROVATO'
-                      }
+                      {getQualityText(selectedRecord)}
                     </span>
                   </div>
                 </div>
