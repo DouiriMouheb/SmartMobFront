@@ -74,7 +74,7 @@ const Home = () => {
     {
       key: 'positive',
       label: 'Esito OK',
-      // esito 1 => OK: il backend TrueCount conta ESITO_CQ_ARTICOLO == true (1)
+      // backend TrueCount = ABILITA_CQ = 1 AND ESITO_CQ_ARTICOLO = 1
       value: overall.trueCount,
       subtitle: formatPercentage(overall.truePercentage),
       icon: CheckCircle2,
@@ -85,7 +85,7 @@ const Home = () => {
     {
       key: 'negative',
       label: 'Esito KO',
-      // esito 0 => KO: il backend FalseCount conta ESITO_CQ_ARTICOLO == false (0)
+      // backend FalseCount = ABILITA_CQ = 1 AND ESITO_CQ_ARTICOLO = 0
       value: overall.falseCount,
       subtitle: formatPercentage(overall.falsePercentage),
       icon: XCircle,
@@ -109,7 +109,7 @@ const Home = () => {
     {
       key: 'ok',
       label: 'OK',
-      count: overall.trueCount,           // esito 1 => OK
+      count: overall.trueCount,           // abilitaCq 1 + esito 1
       percentage: overall.truePercentage,
       barClass: 'bg-emerald-500',
       color: '#10b981',
@@ -117,13 +117,13 @@ const Home = () => {
     {
       key: 'ko',
       label: 'KO',
-      count: overall.falseCount,          // esito 0 => KO
+      count: overall.falseCount,          // abilitaCq 1 + esito 0
       percentage: overall.falsePercentage,
       barClass: 'bg-rose-500',
       color: '#f43f5e',
     },
     {
-      // abilitaCq = 0 arriva con esito null => rientra qui
+      // abilitaCq = 0 (qualunque esito) oppure esito null
       key: 'null',
       label: 'Non testati',
       count: overall.nullCount,
@@ -324,9 +324,9 @@ const Home = () => {
                     <th className="px-3 py-2 font-semibold">Linea</th>
                     <th className="px-3 py-2 font-semibold">Postazione</th>
                     <th className="px-3 py-2 font-semibold">Totale</th>
-                    <th className="px-3 py-2 font-semibold">Positivo</th>
-                    <th className="px-3 py-2 font-semibold">Negativo</th>
-                    <th className="px-3 py-2 font-semibold">Non Testato</th>
+                    <th className="px-3 py-2 font-semibold">OK</th>
+                    <th className="px-3 py-2 font-semibold">KO</th>
+                    <th className="px-3 py-2 font-semibold">Non Testati</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
