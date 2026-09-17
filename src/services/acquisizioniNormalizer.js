@@ -33,10 +33,18 @@ export const normalizeAcquisizioneRecord = (item) => {
     coD_POSTAZIONE: item.coD_POSTAZIONE ?? item.codPostazione ?? null,
     fotO_SUPERIORE: item.fotO_SUPERIORE ?? item.fotoSuperiore ?? null,
     fotO_FRONTALE: item.fotO_FRONTALE ?? item.fotoFrontale ?? null,
+    // Terza foto derivata (cartella Corrected), valorizzata dal backend solo con abilitaCq = 1.
+    fotO_CORRETTA: item.fotO_CORRETTA ?? item.fotoCorretta ?? null,
     fotO_BOX: item.fotO_BOX ?? item.fotoBox ?? null,
     abilitA_CQ: item.abilitA_CQ ?? item.abilitaCq ?? null,
     esitO_CQ_ARTICOLO: item.esitO_CQ_ARTICOLO ?? item.esitoCqArticolo ?? null,
     scostamentO_CQ_ARTICOLO: item.scostamentO_CQ_ARTICOLO ?? item.scostamentoCqArticolo ?? 0,
+    // Seconda dimensione CQ (colore). ABILITA_CQ_COLORE e' BIT NULL a DB (bool? in C#),
+    // a differenza di ABILITA_CQ: il null va conservato, esitoDisplay lo legge come "non testato".
+    abilitA_CQ_COLORE: item.abilitA_CQ_COLORE ?? item.abilitaCqColore ?? null,
+    esitO_CQ_COLORE: item.esitO_CQ_COLORE ?? item.esitoCqColore ?? null,
+    // null, non 0: 0 e' uno scostamento reale e non va confuso con "non misurato" (=> N/A).
+    scostamentO_CQ_COLORE: item.scostamentO_CQ_COLORE ?? item.scostamentoCqColore ?? null,
     codicE_ARTICOLO: item.codicE_ARTICOLO ?? item.codiceArticolo ?? '',
     codicE_ORDINE: item.codicE_ORDINE ?? item.codiceOrdine ?? '',
     rightSideAngleDifferent: item.rightSideAngleDifferent
@@ -75,6 +83,38 @@ export const normalizeAcquisizioneRecord = (item) => {
     dT_INS: item.dT_INS ?? item.dtIns ?? null,
     dT_AGG: item.dT_AGG ?? item.dtAgg ?? null,
   };
+};
+
+/**
+ * Le foto di un'acquisizione nell'ordine in cui vanno mostrate.
+ *
+ * Sono sempre due (superiore + frontale, cartella Accoppiate) piu' eventualmente
+ * una terza: la versione corretta dal processo CQ (cartella Corrected). Il backend
+ * la valorizza solo con abilitaCq = 1, quindi quando manca il riquadro non va
+ * mostrato affatto invece di lasciare un placeholder vuoto.
+ *
+ * Accetta sia record normalizzati (fotO_*) sia payload grezzi (foto*).
+ */
+export const getFotoList = (record) => {
+  if (!isObject(record)) {
+    return [];
+  }
+
+  const corretta = record.fotO_CORRETTA ?? record.fotoCorretta ?? null;
+
+  return [
+    {
+      key: 'superiore',
+      label: 'Foto Superiore',
+      src: record.fotO_SUPERIORE ?? record.fotoSuperiore ?? null,
+    },
+    {
+      key: 'frontale',
+      label: 'Foto Frontale',
+      src: record.fotO_FRONTALE ?? record.fotoFrontale ?? null,
+    },
+    ...(corretta ? [{ key: 'corretta', label: 'Foto Corretta', src: corretta }] : []),
+  ];
 };
 
 export const normalizeAcquisizioniArray = (payload) => (

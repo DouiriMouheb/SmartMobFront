@@ -1,11 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { Database, ChevronDown, Loader2, AlertCircle, Package, ChevronLeft, ChevronRight, Search, X, FileBox, Newspaper } from 'lucide-react';
+import React, { useCallback, useState, useEffect } from 'react';
+import { Database, ChevronDown, Loader2, AlertCircle, Package, ChevronLeft, ChevronRight, Search, X, FileBox, Newspaper, ZoomIn, CalendarRange } from 'lucide-react';
 import { useLineePostazioni } from '../hooks/useLineePostazioni';
 import { useAcquisizioniFilter } from '../hooks/useAcquisizioniFilter';
+import { useUserReview } from '../hooks/useUserReview';
 import Modal from '../components/Modal';
-import acquisizioniService from '../services/acquisizioniService';
-import { showError } from '../services/toastService';
-import { ESITO_STATE, resolveEsitoState } from '../services/esitoDisplay';
+import ImageLightbox from '../components/ImageLightbox';
+import UserReviewPanel from '../components/UserReviewPanel';
+import EsitoCqPanel from '../components/EsitoCqPanel';
+import { getFotoList } from '../services/acquisizioniNormalizer';
+import { isWithinDateRange } from '../services/dateUtils';
+import {
+  ESITO_DIMENSIONI,
+  ESITO_STATE,
+  resolveEsitoColoreState,
+  resolveEsitoState,
+} from '../services/esitoDisplay';
 
 const Acquisizioni = () => {
   const [selectedLinea, setSelectedLinea] = useState('');
@@ -18,12 +27,24 @@ const Acquisizioni = () => {
   // Search state
   const [searchTerm, setSearchTerm] = useState('');
 
-  const [reviewState, setReviewState] = useState({});
-  const [reviewBase, setReviewBase] = useState({});
-  const [savingReview, setSavingReview] = useState({});
+  // Date range filter state (client-side, su dT_INS con fallback su dT_AGG)
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selectedAcquisizione, setSelectedAcquisizione] = useState(null);
+  const [lightbox, setLightbox] = useState({ open: false, src: '', title: '' });
+
+  const handleImageOpen = (imageUrl, title = '') => {
+    if (imageUrl) {
+      setLightbox({ open: true, src: imageUrl, title });
+    }
+  };
+
+  const handleLightboxClose = useCallback(
+    () => setLightbox((current) => ({ ...current, open: false })),
+    []
+  );
 
   // Use the hook to get API data
   const { loading, error, getLinee, getPostazioniForLinea } = useLineePostazioni();
@@ -34,6 +55,8 @@ const Acquisizioni = () => {
     loading: acquisizioniLoading,
     error: acquisizioniError
   } = useAcquisizioniFilter(selectedLinea, selectedPostazione);
+
+  const review = useUserReview(acquisizioniData);
 
   // Get available linee and postazioni
   const linee = getLinee();
@@ -47,33 +70,14 @@ const Acquisizioni = () => {
   // Reset pagination when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedLinea, selectedPostazione, itemsPerPage, searchTerm]);
+  }, [selectedLinea, selectedPostazione, itemsPerPage, searchTerm, startDate, endDate]);
 
-  useEffect(() => {
-    setReviewState({});
-    setReviewBase({});
-    setSavingReview({});
-  }, [selectedLinea, selectedPostazione]);
-
-  useEffect(() => {
-    setReviewBase(() => {
-      const next = {};
-
-      acquisizioniData.forEach((item) => {
-        next[item.id] = {
-          checkedByUser: item.checkedByUser ?? null,
-          userNotes: item.userNotes ?? '',
-        };
-      });
-
-      return next;
-    });
-  }, [acquisizioniData]);
-
-  // Regole in ../services/esitoDisplay: abilitA_CQ 0 => non testato,
+  // Regole in ../services/esitoDisplay: abilita 0 => non testato,
   // altrimenti esito 1 => OK, esito 0 => KO, esito null => non testato.
-  const getEsitoLabel = (record) => {
-    switch (resolveEsitoState(record)) {
+  // Gli helper ricevono lo STATO (non il record) cosi' servono entrambe le
+  // dimensioni CQ (articolo e colore) senza duplicarli.
+  const getEsitoLabel = (state) => {
+    switch (state) {
       case ESITO_STATE.OK:
         return 'OK';
       case ESITO_STATE.KO:
@@ -83,8 +87,8 @@ const Acquisizioni = () => {
     }
   };
 
-  const getEsitoIcon = (record) => {
-    switch (resolveEsitoState(record)) {
+  const getEsitoIcon = (state) => {
+    switch (state) {
       case ESITO_STATE.OK:
         return '✓';
       case ESITO_STATE.KO:
@@ -94,8 +98,8 @@ const Acquisizioni = () => {
     }
   };
 
-  const getEsitoBadgeClasses = (record, mobile = false) => {
-    switch (resolveEsitoState(record)) {
+  const getEsitoBadgeClasses = (state, mobile = false) => {
+    switch (state) {
       case ESITO_STATE.OK:
         return mobile ? 'bg-green-500 text-white shadow-sm' : 'bg-green-100 text-green-800';
       case ESITO_STATE.KO:
@@ -136,190 +140,36 @@ const Acquisizioni = () => {
     return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
   };
 
-  const getPhotoValue = (item, field) => {
-    if (!item) {
-      return null;
-    }
-
-    if (field === 'superiore') {
-      return item.fotoSuperiore ?? item.fotO_SUPERIORE ?? null;
-    }
-
-    if (field === 'frontale') {
-      return item.fotoFrontale ?? item.fotO_FRONTALE ?? null;
-    }
-
-    return null;
-  };
 
   const handleOpenDetails = (item) => {
     setSelectedAcquisizione(item);
     setDetailsOpen(true);
   };
 
-  const getReviewLabel = (value) => {
-    if (value === true) {
-      return 'approvato';
-    }
-
-    if (value === false) {
-      return 'non approvato';
-    }
-
-    return 'non verificato';
-  };
-
-  const reviewOptions = [
-    { value: true, label: 'Si', activeClass: 'bg-green-600 text-white' },
-    { value: null, label: '-', activeClass: 'bg-gray-400 text-white' },
-    { value: false, label: 'No', activeClass: 'bg-red-600 text-white' },
-  ];
-
-  const getReviewField = (itemId, field, fallback) => {
-    if (reviewState[itemId] && Object.prototype.hasOwnProperty.call(reviewState[itemId], field)) {
-      return reviewState[itemId][field];
-    }
-
-    if (reviewBase[itemId] && Object.prototype.hasOwnProperty.call(reviewBase[itemId], field)) {
-      return reviewBase[itemId][field];
-    }
-
-    return fallback;
-  };
-
-  const getCheckedByUser = (item) => (
-    getReviewField(item.id, 'checkedByUser', item.checkedByUser ?? null)
-  );
-
-  const getUserNotes = (item) => (
-    getReviewField(item.id, 'userNotes', item.userNotes ?? '')
-  );
-
-  const setReviewField = (itemId, field, value) => {
-    setReviewState((prev) => ({
-      ...prev,
-      [itemId]: {
-        ...prev[itemId],
-        [field]: value,
-      },
-    }));
-  };
-
-  const handleUserReviewSave = async (item, updates = {}) => {
-    const hasCheckedUpdate = Object.prototype.hasOwnProperty.call(updates, 'checkedByUser');
-    const hasNotesUpdate = Object.prototype.hasOwnProperty.call(updates, 'userNotes');
-
-    const nextCheckedByUser = hasCheckedUpdate
-      ? updates.checkedByUser
-      : getReviewField(item.id, 'checkedByUser', item.checkedByUser ?? null);
-
-    const nextUserNotes = hasNotesUpdate
-      ? updates.userNotes
-      : getReviewField(item.id, 'userNotes', item.userNotes ?? '');
-
-    const base = reviewBase[item.id] || {
-      checkedByUser: item.checkedByUser ?? null,
-      userNotes: item.userNotes ?? '',
-    };
-
-    if (base.checkedByUser === nextCheckedByUser && base.userNotes === nextUserNotes) {
-      return;
-    }
-
-    setSavingReview((prev) => ({ ...prev, [item.id]: true }));
-    setReviewState((prev) => ({
-      ...prev,
-      [item.id]: {
-        ...prev[item.id],
-        checkedByUser: nextCheckedByUser,
-        userNotes: nextUserNotes,
-      },
-    }));
-
-    const result = await acquisizioniService.updateUserReview(item.id, {
-      checkedByUser: nextCheckedByUser,
-      userNotes: nextUserNotes,
-    });
-
-    setSavingReview((prev) => ({ ...prev, [item.id]: false }));
-
-    if (!result.success) {
-      showError(result.message || 'Errore aggiornamento revisione utente');
-      setReviewState((prev) => {
-        const next = { ...prev };
-        delete next[item.id];
-        return next;
-      });
-      return;
-    }
-
-    setReviewBase((prev) => ({
-      ...prev,
-      [item.id]: {
-        checkedByUser: nextCheckedByUser,
-        userNotes: nextUserNotes,
-      },
-    }));
-    setReviewState((prev) => {
-      const next = { ...prev };
-      delete next[item.id];
-      return next;
-    });
-  };
-
   const handleCloseDetails = () => {
-    if (selectedAcquisizione && !savingReview[selectedAcquisizione.id]) {
-      handleUserReviewSave(selectedAcquisizione, {
-        checkedByUser: getCheckedByUser(selectedAcquisizione),
-        userNotes: getUserNotes(selectedAcquisizione),
-      });
-    }
+    review.flush(selectedAcquisizione);
 
     setDetailsOpen(false);
     setSelectedAcquisizione(null);
   };
 
-  const selectedFotoSuperiore = selectedAcquisizione
-    ? getPhotoValue(selectedAcquisizione, 'superiore')
-    : null;
-  const selectedFotoFrontale = selectedAcquisizione
-    ? getPhotoValue(selectedAcquisizione, 'frontale')
-    : null;
+  // Due foto (superiore + frontale) piu' la corretta, presente solo con abilitaCq = 1.
+  const selectedFotoList = getFotoList(selectedAcquisizione);
 
-  const renderReviewToggle = (item) => {
-    const checkedByUser = getCheckedByUser(item);
-    const isSaving = Boolean(savingReview[item.id]);
+  // Data invertita: si segnala e non si filtra, cosi' la lista non sparisce
+  // mentre si sta ancora scegliendo il secondo estremo.
+  const dateRangeInvalid = Boolean(startDate && endDate && startDate > endDate);
+  const hasDateFilter = Boolean(startDate || endDate) && !dateRangeInvalid;
 
-    return (
-      <div className="inline-flex rounded-lg border border-gray-300 overflow-hidden bg-white">
-        {reviewOptions.map((option, index) => {
-          const isActive = option.value === checkedByUser
-            || (option.value === null && (checkedByUser === null || checkedByUser === undefined));
-          const activeClass = option.activeClass;
-          const inactiveClass = 'text-gray-600 hover:bg-gray-50';
-          const separator = index < reviewOptions.length - 1 ? 'border-r border-gray-300' : '';
-
-          return (
-            <button
-              key={option.label}
-              type="button"
-              className={`px-2 py-1 text-xs font-medium transition ${separator} ${isActive ? activeClass : inactiveClass} ${isSaving ? 'cursor-not-allowed opacity-60' : ''}`}
-              onClick={() => handleUserReviewSave(item, { checkedByUser: option.value })}
-              aria-pressed={isActive}
-              aria-label={`Approvazione utente: ${option.label === '-' ? 'Non verificato' : option.label}`}
-              title={option.label === '-' ? 'Non verificato' : option.label}
-              disabled={isSaving}
-            >
-              {option.label}
-            </button>
-          );
-        })}
-      </div>
-    );
+  const handleResetDates = () => {
+    setStartDate('');
+    setEndDate('');
   };
 
-  // Filter data based on search term
+  // Filter data based on date range (AND) and search term
   const filteredData = acquisizioniData.filter(item => {
+    if (hasDateFilter && !isWithinDateRange(item, startDate, endDate)) return false;
+
     if (!searchTerm) return true;
 
     const searchLower = searchTerm.toLowerCase();
@@ -327,13 +177,15 @@ const Acquisizioni = () => {
       item.id?.toString().toLowerCase().includes(searchLower) ||
       item.codicE_ARTICOLO?.toLowerCase().includes(searchLower) ||
       item.codicE_ORDINE?.toLowerCase().includes(searchLower) ||
-      getEsitoLabel(item).toLowerCase().includes(searchLower) ||
+      getEsitoLabel(resolveEsitoState(item)).toLowerCase().includes(searchLower) ||
+      getEsitoLabel(resolveEsitoColoreState(item)).toLowerCase().includes(searchLower) ||
       item.scostamentO_CQ_ARTICOLO?.toString().includes(searchLower) ||
+      item.scostamentO_CQ_COLORE?.toString().includes(searchLower) ||
       formatDifferentValue(item.rightSideAngleDifferent).toLowerCase().includes(searchLower) ||
       formatDifferentValue(item.rightSideMisalignmentDifferent).toLowerCase().includes(searchLower) ||
       formatDifferentValue(item.leftSideAngleDifferent).toLowerCase().includes(searchLower) ||
       formatDifferentValue(item.leftSideMisalignmentDifferent).toLowerCase().includes(searchLower) ||
-      getReviewLabel(item.checkedByUser).includes(searchLower) ||
+      review.getReviewLabel(item.checkedByUser).includes(searchLower) ||
       item.userNotes?.toLowerCase().includes(searchLower)
     );
   });
@@ -512,6 +364,51 @@ const Acquisizioni = () => {
                         </button>
                       )}
                     </div>
+
+                    {/* Filtro per data (client-side, su Data Inserimento) */}
+                    <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+                      <label className="flex flex-col gap-1.5">
+                        <span className="flex items-center gap-1.5 text-xs font-medium text-gray-700">
+                          <CalendarRange className="h-4 w-4 text-red-700" />
+                          Data Inizio
+                        </span>
+                        <input
+                          type="date"
+                          value={startDate}
+                          max={endDate || undefined}
+                          onChange={(e) => setStartDate(e.target.value)}
+                          className="rounded-xl border-2 border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 transition-all duration-200 hover:bg-white focus:border-red-400 focus:ring-2 focus:ring-red-400"
+                        />
+                      </label>
+
+                      <label className="flex flex-col gap-1.5">
+                        <span className="text-xs font-medium text-gray-700">Data Fine</span>
+                        <input
+                          type="date"
+                          value={endDate}
+                          min={startDate || undefined}
+                          onChange={(e) => setEndDate(e.target.value)}
+                          className="rounded-xl border-2 border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 transition-all duration-200 hover:bg-white focus:border-red-400 focus:ring-2 focus:ring-red-400"
+                        />
+                      </label>
+
+                      {(startDate || endDate) && (
+                        <button
+                          type="button"
+                          onClick={handleResetDates}
+                          className="inline-flex items-center gap-1.5 rounded-xl border border-gray-300 px-3 py-2 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-800"
+                        >
+                          <X className="h-4 w-4" />
+                          Azzera date
+                        </button>
+                      )}
+                    </div>
+
+                    {dateRangeInvalid && (
+                      <p className="mt-2 text-xs font-medium text-red-600">
+                        La data di inizio non puo essere successiva alla data di fine
+                      </p>
+                    )}
                   </div>
 
                   {/* Items per page selector and total count - Fixed at Top */}
@@ -533,7 +430,7 @@ const Acquisizioni = () => {
 
                         <div className="text-xs text-gray-600 font-medium text-center sm:text-right">
                           Totale: {totalItems}
-                          {searchTerm && totalItems !== acquisizioniData.length && (
+                          {(searchTerm || hasDateFilter) && totalItems !== acquisizioniData.length && (
                             <span className="text-red-700 ml-1">(filtrati)</span>
                           )}
                         </div>
@@ -557,9 +454,11 @@ const Acquisizioni = () => {
                               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Codice Ordine
                               </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Esito CQ
-                              </th>
+                              {ESITO_DIMENSIONI.map((dim) => (
+                                <th key={dim.key} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  {dim.label}
+                                </th>
+                              ))}
                               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Data Inserimento
                               </th>
@@ -586,11 +485,16 @@ const Acquisizioni = () => {
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                   {item.codicE_ORDINE}
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getEsitoBadgeClasses(item)}`}>
-                                    {getEsitoLabel(item)}
-                                  </span>
-                                </td>
+                                {ESITO_DIMENSIONI.map((dim) => {
+                                  const state = dim.resolve(item);
+                                  return (
+                                    <td key={dim.key} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getEsitoBadgeClasses(state)}`}>
+                                        {getEsitoLabel(state)}
+                                      </span>
+                                    </td>
+                                  );
+                                })}
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                   {formatDateTime(item.dT_INS)}
                                 </td>
@@ -624,11 +528,23 @@ const Acquisizioni = () => {
                           >
                             {/* Status Header */}
                             <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-4 py-3 rounded-t-lg border-b border-gray-200">
-                              <div className="flex items-center justify-between">
-                                <span className={`inline-flex items-center px-3 py-1.5 text-xs font-semibold rounded-lg ${getEsitoBadgeClasses(item, true)}`}>
-                                  {`${getEsitoIcon(item)} ${getEsitoLabel(item)}`}
-                                </span>
-                                <span className="text-xs text-gray-500 font-medium">
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                  {ESITO_DIMENSIONI.map((dim) => {
+                                    const state = dim.resolve(item);
+                                    return (
+                                      <span
+                                        key={dim.key}
+                                        title={dim.label}
+                                        className={`inline-flex items-center px-2.5 py-1.5 text-xs font-semibold rounded-lg ${getEsitoBadgeClasses(state, true)}`}
+                                      >
+                                        <span className="mr-1 text-[10px] uppercase tracking-wide opacity-80">{dim.shortLabel}</span>
+                                        {`${getEsitoIcon(state)} ${getEsitoLabel(state)}`}
+                                      </span>
+                                    );
+                                  })}
+                                </div>
+                                <span className="text-xs text-gray-500 font-medium whitespace-nowrap">
                                   {formatDateTime(item.dT_INS)}
                                 </span>
                               </div>
@@ -846,16 +762,11 @@ const Acquisizioni = () => {
                   {formatDifferentValue(selectedAcquisizione.coD_POSTAZIONE)}
                 </div>
               </div>
-              <div>
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Esito CQ</p>
-                <div className="mt-1 flex items-center rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
-                  <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${getEsitoBadgeClasses(selectedAcquisizione)}`}>
-                    {getEsitoLabel(selectedAcquisizione)}
-                  </span>
-                </div>
-              </div>
             </div>
           </section>
+
+          {/* Controllo Qualità: esito articolo + esito colore */}
+          <EsitoCqPanel record={selectedAcquisizione} />
 
           {/* Misurazioni */}
           <section>
@@ -891,45 +802,35 @@ const Acquisizioni = () => {
           {/* Foto */}
           <section>
             <h4 className="mb-2 text-xs font-bold uppercase tracking-wide text-gray-400">Foto</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Foto Superiore</p>
-                {selectedFotoSuperiore ? (
-                  <div className="mt-2 overflow-hidden rounded-lg border border-gray-200 bg-white">
-                    <img
-                      src={selectedFotoSuperiore}
-                      alt="Foto superiore"
-                      className="h-52 w-full object-contain bg-gray-100"
-                    />
-                    <div className="border-t border-gray-200 px-3 py-2 text-xs text-gray-600 break-all">
-                      {selectedFotoSuperiore}
+            <div className={`grid grid-cols-1 gap-4 ${selectedFotoList.length === 3 ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
+              {selectedFotoList.map((foto) => (
+                <div key={foto.key}>
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{foto.label}</p>
+                  {foto.src ? (
+                    <div className="mt-2 overflow-hidden rounded-lg border border-gray-200 bg-white">
+                      <button
+                        type="button"
+                        onClick={() => handleImageOpen(foto.src, foto.label)}
+                        title="Clicca per ingrandire"
+                        className="group relative block w-full cursor-zoom-in"
+                      >
+                        <img
+                          src={foto.src}
+                          alt={foto.label}
+                          className="h-52 w-full object-contain bg-gray-100"
+                        />
+                        <span className="absolute inset-0 flex items-center justify-center bg-slate-950/40 opacity-0 transition-opacity group-hover:opacity-100">
+                          <ZoomIn className="h-8 w-8 text-white" />
+                        </span>
+                      </button>
                     </div>
-                  </div>
-                ) : (
-                  <div className="mt-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-6 text-sm text-gray-500 text-center">
-                    Nessuna immagine disponibile
-                  </div>
-                )}
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Foto Frontale</p>
-                {selectedFotoFrontale ? (
-                  <div className="mt-2 overflow-hidden rounded-lg border border-gray-200 bg-white">
-                    <img
-                      src={selectedFotoFrontale}
-                      alt="Foto frontale"
-                      className="h-52 w-full object-contain bg-gray-100"
-                    />
-                    <div className="border-t border-gray-200 px-3 py-2 text-xs text-gray-600 break-all">
-                      {selectedFotoFrontale}
+                  ) : (
+                    <div className="mt-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-6 text-sm text-gray-500 text-center">
+                      Nessuna immagine disponibile
                     </div>
-                  </div>
-                ) : (
-                  <div className="mt-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-6 text-sm text-gray-500 text-center">
-                    Nessuna immagine disponibile
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              ))}
             </div>
           </section>
 
@@ -953,26 +854,18 @@ const Acquisizioni = () => {
           </section>
 
           {/* Revisione Utente */}
-          <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 space-y-3">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                Revisione Utente
-              </span>
-              {renderReviewToggle(selectedAcquisizione)}
-            </div>
-            <textarea
-              value={getUserNotes(selectedAcquisizione)}
-              onChange={(e) => setReviewField(selectedAcquisizione.id, 'userNotes', e.target.value)}
-              onBlur={(e) => handleUserReviewSave(selectedAcquisizione, { userNotes: e.target.value })}
-              className="w-full min-h-[96px] resize-y rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-red-400 focus:ring-1 focus:ring-red-300"
-              placeholder="Aggiungi una nota per questa acquisizione..."
-              aria-label="Note utente"
-              disabled={Boolean(savingReview[selectedAcquisizione.id])}
-            />
-          </div>
+          <UserReviewPanel item={selectedAcquisizione} review={review} />
         </div>
       )}
     </Modal>
+
+    <ImageLightbox
+      open={lightbox.open}
+      src={lightbox.src}
+      alt={lightbox.title}
+      title={lightbox.title}
+      onClose={handleLightboxClose}
+    />
     </>
   );
 };

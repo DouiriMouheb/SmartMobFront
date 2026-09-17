@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   Wifi,
   WifiOff,
@@ -12,17 +12,21 @@ import {
   Package,
   ShoppingCart,
   Eye,
-  CloudCog
+  CloudCog,
+  Palette
 } from 'lucide-react';
 import useAcquisizioniRealtime from '../hooks/useAcquisizioniRealtime';
 import Modal from '../components/Modal';
-import { ESITO_STATE, resolveEsitoState } from '../services/esitoDisplay';
+import ImageLightbox from '../components/ImageLightbox';
+import { getFotoList } from '../services/acquisizioniNormalizer';
+import { ESITO_DIMENSIONI, ESITO_STATE } from '../services/esitoDisplay';
 
-// Regole in ../services/esitoDisplay: abilitA_CQ 0 => non testato,
+// Regole in ../services/esitoDisplay: abilita 0 => non testato,
 // altrimenti esito 1 => APPROVATO (verde), esito 0 => RESPINTO (rosso),
 // esito null => non testato.
-const getQualitySquareColor = (record) => {
-  switch (resolveEsitoState(record)) {
+// Gli helper ricevono lo STATO (da dim.resolve) cosi' valgono per articolo e colore.
+const getQualitySquareColor = (state) => {
+  switch (state) {
     case ESITO_STATE.OK:
       return 'bg-green-500';
     case ESITO_STATE.KO:
@@ -32,8 +36,8 @@ const getQualitySquareColor = (record) => {
   }
 };
 
-const getQualityIcon = (record) => {
-  switch (resolveEsitoState(record)) {
+const getQualityIcon = (state) => {
+  switch (state) {
     case ESITO_STATE.OK:
       return '✓';
     case ESITO_STATE.KO:
@@ -43,8 +47,8 @@ const getQualityIcon = (record) => {
   }
 };
 
-const getQualityText = (record) => {
-  switch (resolveEsitoState(record)) {
+const getQualityText = (state) => {
+  switch (state) {
     case ESITO_STATE.OK:
       return 'APPROVATO';
     case ESITO_STATE.KO:
@@ -54,9 +58,20 @@ const getQualityText = (record) => {
   }
 };
 
+// Sì / No / N/A per i flag abilita (ABILITA_CQ_COLORE puo' essere null).
+const formatAbilita = (value) => (value === null || value === undefined ? 'N/A' : value ? 'Sì' : 'No');
+
 const RealtimeControlloQualita = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState(null);
+  const [lightbox, setLightbox] = useState({ open: false, src: '', title: '' });
+  // Immagini che hanno dato 404: mostrano il placeholder al posto dell'icona rotta.
+  const [failedImages, setFailedImages] = useState({});
+
+  const markImageFailed = useCallback(
+    (src) => setFailedImages((current) => ({ ...current, [src]: true })),
+    []
+  );
 
   const {
     connectionState,
@@ -74,12 +89,17 @@ const RealtimeControlloQualita = () => {
     isDisconnected,
   } = useAcquisizioniRealtime();
 
-  // Simple function to open image URL in new window
-  const handleImageOpen = (imageUrl) => {
+  // Apre la foto nel visualizzatore a schermo intero con zoom/pan.
+  const handleImageOpen = (imageUrl, title = '') => {
     if (imageUrl) {
-      window.open(imageUrl, '_blank');
+      setLightbox({ open: true, src: imageUrl, title });
     }
   };
+
+  const handleLightboxClose = useCallback(
+    () => setLightbox((current) => ({ ...current, open: false })),
+    []
+  );
 
   // Helper function to format timestamps
   const formatTimestamp = (timestamp) => {
@@ -262,15 +282,30 @@ const RealtimeControlloQualita = () => {
                         </div>
                       </div>
 
-                      <div className="text-center lg:text-left">
-                        <label className="block text-lg font-semibold text-gray-700 mb-2">
-                          Abilita CQ
-                        </label>
-                        <div className="flex items-center justify-center lg:justify-start space-x-3">
-                          <CheckCircle className="w-6 h-6 text-gray-400" />
-                          <span className="text-2xl font-bold text-gray-900">
-                            {record.abilitA_CQ !== null ? (record.abilitA_CQ ? 'Sì' : 'No') : 'N/A'}
-                          </span>
+                      {/* Flag abilita per le due dimensioni CQ */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="text-center lg:text-left">
+                          <label className="block text-lg font-semibold text-gray-700 mb-2">
+                            Abilita CQ Articolo
+                          </label>
+                          <div className="flex items-center justify-center lg:justify-start space-x-3">
+                            <CheckCircle className="w-6 h-6 text-gray-400" />
+                            <span className="text-2xl font-bold text-gray-900">
+                              {formatAbilita(record.abilitA_CQ)}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="text-center lg:text-left">
+                          <label className="block text-lg font-semibold text-gray-700 mb-2">
+                            Abilita CQ Colore
+                          </label>
+                          <div className="flex items-center justify-center lg:justify-start space-x-3">
+                            <Palette className="w-6 h-6 text-gray-400" />
+                            <span className="text-2xl font-bold text-gray-900">
+                              {formatAbilita(record.abilitA_CQ_COLORE)}
+                            </span>
+                          </div>
                         </div>
                       </div>
 
@@ -311,21 +346,30 @@ const RealtimeControlloQualita = () => {
                       </div>
                     </div>
 
-                    {/* Center - Quality indicator square (60% of screen width) */}
+                    {/* Center - Quality squares, one per CQ dimension (articolo + colore) */}
                     <div className="flex-grow flex flex-col items-center justify-center lg:w-3/5">
-                      <label className="block text-xl font-bold text-gray-700 mb-4 text-center">
-                        Esito CQ Articolo
-                      </label>
-                      <div
-                        className={`w-80 h-80 lg:w-96 lg:h-96 xl:w-[28rem] xl:h-[28rem] rounded-2xl ${getQualitySquareColor(record)}
-                          shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-105 hover:shadow-3xl`}
-                      >
-                        <span className="text-white font-bold text-6xl lg:text-7xl xl:text-8xl">
-                          {getQualityIcon(record)}
-                        </span>
-                      </div>
-                      <div className="mt-4 text-lg font-semibold text-center text-gray-600">
-                        {getQualityText(record)}
+                      <div className="flex w-full flex-col sm:flex-row flex-wrap items-start justify-center gap-6 xl:gap-8">
+                        {ESITO_DIMENSIONI.map((dim) => {
+                          const state = dim.resolve(record);
+                          return (
+                            <div key={dim.key} className="flex flex-col items-center">
+                              <label className="block text-lg xl:text-xl font-bold text-gray-700 mb-3 text-center">
+                                {dim.label}
+                              </label>
+                              <div
+                                className={`w-56 h-56 lg:w-48 lg:h-48 xl:w-64 xl:h-64 2xl:w-80 2xl:h-80 rounded-2xl ${getQualitySquareColor(state)}
+                                  shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-105 hover:shadow-3xl`}
+                              >
+                                <span className="text-white font-bold text-5xl xl:text-6xl 2xl:text-7xl">
+                                  {getQualityIcon(state)}
+                                </span>
+                              </div>
+                              <div className="mt-3 text-base xl:text-lg font-semibold text-center text-gray-600">
+                                {getQualityText(state)}
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                       <button
                         onClick={() => handleViewClick(record)}
@@ -369,15 +413,21 @@ const RealtimeControlloQualita = () => {
                     <h3 className="text-base font-bold text-gray-900">Acquisizione #{selectedRecord.id}</h3>
                     <p className="text-xs text-gray-600">{formatTimestamp(selectedRecord.dT_INS)}</p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div
-                      className={`w-5 h-5 rounded-full flex items-center justify-center text-white font-bold text-xs ${getQualitySquareColor(selectedRecord)}`}
-                    >
-                      {getQualityIcon(selectedRecord)}
-                    </div>
-                    <span className="text-sm font-bold">
-                      {getQualityText(selectedRecord)}
-                    </span>
+                  <div className="flex flex-wrap items-center gap-3">
+                    {ESITO_DIMENSIONI.map((dim) => {
+                      const state = dim.resolve(selectedRecord);
+                      return (
+                        <div key={dim.key} className="flex items-center gap-2" title={dim.label}>
+                          <div
+                            className={`w-5 h-5 rounded-full flex items-center justify-center text-white font-bold text-xs ${getQualitySquareColor(state)}`}
+                          >
+                            {getQualityIcon(state)}
+                          </div>
+                          <span className="text-sm font-bold">{getQualityText(state)}</span>
+                          <span className="text-xs uppercase tracking-wide text-gray-500">{dim.shortLabel}</span>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
                 <div className="flex items-center gap-1 text-xs text-gray-600">
@@ -441,158 +491,57 @@ const RealtimeControlloQualita = () => {
     Foto
   </h4>
   <div className="space-y-4">
-    <div>
-      <label className="block text-xs font-medium text-gray-600 mb-1">Foto Superiore</label>
-      <div className="bg-gray-50 p-2 rounded">
-        {selectedRecord.fotO_SUPERIORE ? (
-          <div className="relative group">
-            <img 
-              src={selectedRecord.fotO_SUPERIORE} 
-              alt="Foto Superiore"
-              className="w-full h-40 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
-              onClick={() => handleImageOpen(selectedRecord.fotO_SUPERIORE)}
-              onError={(e) => {
-                console.log('Image failed to load:', e.target.src);
-                console.log('Original path:', selectedRecord.fotO_SUPERIORE);
-                e.target.style.display = 'none';
-                e.target.nextSibling.style.display = 'flex';
-              }}
-            />
-            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black bg-opacity-50 rounded cursor-pointer"
-                 onClick={() => handleImageOpen(selectedRecord.fotO_SUPERIORE)}>
-              <Eye className="w-8 h-8 text-white" />
+    {getFotoList(selectedRecord).map((foto) => (
+      <div key={foto.key}>
+        <label className="block text-xs font-medium text-gray-600 mb-1">{foto.label}</label>
+        <div className="bg-gray-50 p-2 rounded">
+          {foto.src && !failedImages[foto.src] ? (
+            <div className="relative group">
+              <img
+                src={foto.src}
+                alt={foto.label}
+                className="w-full h-40 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => handleImageOpen(foto.src, foto.label)}
+                onError={() => markImageFailed(foto.src)}
+              />
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black bg-opacity-50 rounded cursor-pointer"
+                   onClick={() => handleImageOpen(foto.src, foto.label)}>
+                <Eye className="w-8 h-8 text-white" />
+              </div>
+              <button
+                onClick={() => handleImageOpen(foto.src, foto.label)}
+                className="mt-2 w-full px-3 py-2 bg-red-700 text-white rounded hover:bg-red-800 flex items-center justify-center gap-2 transition-colors text-sm"
+              >
+                <Eye size={16} />
+                Ingrandisci
+              </button>
             </div>
-            <button
-              onClick={() => handleImageOpen(selectedRecord.fotO_SUPERIORE)}
-              className="mt-2 w-full px-3 py-2 bg-red-700 text-white rounded hover:bg-red-800 flex items-center justify-center gap-2 transition-colors text-sm"
-            >
-              <Eye size={16} />
-              Apri in nuova finestra
-            </button>
-          </div>
-        ) : null}
-        <div className="hidden items-center justify-center h-40 text-gray-500 text-sm bg-gray-100 rounded border">
-          <div className="text-center">
-            <Camera className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-            <p>Immagine non disponibile</p>
-            <p className="text-xs mt-1">Path: {selectedRecord.fotO_SUPERIORE}</p>
-          </div>
+          ) : (
+            <div className="flex items-center justify-center h-40 text-gray-500 text-sm bg-gray-100 rounded border">
+              <div className="text-center">
+                <Camera className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                <p>Immagine non disponibile</p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
-    </div>
-    <div>
-      <label className="block text-xs font-medium text-gray-600 mb-1">Foto Frontale</label>
-      <div className="bg-gray-50 p-2 rounded">
-        {selectedRecord.fotO_FRONTALE ? (
-          <div className="relative group">
-            <img 
-              src={selectedRecord.fotO_FRONTALE} 
-              alt="Foto Frontale"
-              className="w-full h-40 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
-              onClick={() => handleImageOpen(selectedRecord.fotO_FRONTALE)}
-              onError={(e) => {
-                console.log('Image failed to load:', e.target.src);
-                console.log('Original path:', selectedRecord.fotO_FRONTALE);
-                e.target.style.display = 'none';
-                e.target.nextSibling.style.display = 'flex';
-              }}
-            />
-            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black bg-opacity-50 rounded cursor-pointer"
-                 onClick={() => handleImageOpen(selectedRecord.fotO_FRONTALE)}>
-              <Eye className="w-8 h-8 text-white" />
-            </div>
-            <button
-              onClick={() => handleImageOpen(selectedRecord.fotO_FRONTALE)}
-              className="mt-2 w-full px-3 py-2 bg-red-700 text-white rounded hover:bg-red-800 flex items-center justify-center gap-2 transition-colors text-sm"
-            >
-              <Eye size={16} />
-              Apri in nuova finestra
-            </button>
-          </div>
-        ) : null}
-        <div className="hidden items-center justify-center h-40 text-gray-500 text-sm bg-gray-100 rounded border">
-          <div className="text-center">
-            <Camera className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-            <p>Immagine non disponibile</p>
-            <p className="text-xs mt-1">Path: {selectedRecord.fotO_FRONTALE}</p>
-          </div>
-        </div>
-      </div>
-    </div>
+    ))}
   </div>
 </div>
             </div>
 
-            {/* Technical Details - Compact Grid 
-            <div className="bg-white border border-gray-200 rounded-lg p-3">
-              <h4 className="text-sm font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                <Hash className="w-4 h-4 text-purple-500" />
-                Dettagli Tecnici
-              </h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                <div className="bg-gray-50 p-2 rounded">
-                  <label className="block text-xs font-medium text-gray-600 mb-1">ID Record</label>
-                  <p className="text-sm font-semibold text-gray-900">{selectedRecord.id || 'N/A'}</p>
-                </div>
-
-                <div className="bg-gray-50 p-2 rounded">
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Timestamp</label>
-                  <p className="text-xs font-semibold text-gray-900">{formatTimestamp(selectedRecord.dT_INS)}</p>
-                </div>
-
-                {/* Dynamic fields for any additional properties 
-                {Object.entries(selectedRecord).map(([key, value]) => {
-                  // Skip already displayed fields
-                  if (['id', 'dT_INS', 'codicE_ARTICOLO', 'codicE_ORDINE', 'abilitA_CQ', 'esitO_CQ_ARTICOLO'].includes(key)) {
-                    return null;
-                  }
-
-                  // Create better field labels
-                  const getFieldLabel = (fieldKey) => {
-                    const fieldMap = {
-                      'coD_LINEA': 'Codice Linea',
-                      'coD_POSTAZIONE': 'Codice Postazione',
-                      'foT_O_SUPERIORE': 'Foto Superiore',
-                      'foT_O_FRONTALE': 'Foto Frontale',
-                      'foT_O_BOX': 'Foto Box',
-                      'esiT_O_CQ_BOX': 'Esito CQ Box',
-                      'confidenZ_A_CQ_BOX': 'Confidenza CQ Box',
-                      'scostamenT_O_CQ_ART_ICOLO': 'Scostamento CQ Articolo',
-                      'dT_AGG': 'Data Aggiornamento'
-                    };
-
-                    if (fieldMap[fieldKey]) {
-                      return fieldMap[fieldKey];
-                    }
-
-                    // Fallback: clean up the field name
-                    return fieldKey
-                      .replace(/_/g, ' ')
-                      .replace(/([A-Z])/g, ' $1')
-                      .replace(/\s+/g, ' ')
-                      .trim()
-                      .toLowerCase()
-                      .split(' ')
-                      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                      .join(' ');
-                  };
-
-                  return (
-                    <div key={key} className="bg-gray-50 p-2 rounded">
-                      <label className="block text-xs font-medium text-gray-600 mb-1">
-                        {getFieldLabel(key)}
-                      </label>
-                      <p className="text-xs font-semibold text-gray-900 break-all">
-                        {value !== null && value !== undefined ? String(value) : 'N/A'}
-                      </p>
-                    </div>
-                  );
-                })}
-              </div>
-            </div> Grid */}
           </div>
         )}
       </Modal>
+
+      <ImageLightbox
+        open={lightbox.open}
+        src={lightbox.src}
+        alt={lightbox.title}
+        title={lightbox.title}
+        onClose={handleLightboxClose}
+      />
     </div>
   );
 };

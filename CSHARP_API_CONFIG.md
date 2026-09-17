@@ -111,7 +111,7 @@ public class AcquisizioniController : ControllerBase
                 CODICE_ARTICOLO = "ART001",
                 CODICE_ORDINE = "ORD001",
                 ESITO_CQ_ARTICOLO = "OK",
-                ESITO_CQ_BOX = "OK",
+                ESITO_CQ_COLORE = "OK",
                 CreatedAt = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ")
             }
         };
@@ -144,8 +144,9 @@ public class AcquisizioneDto
     public string? ABILITA_CQ { get; set; }
     public string? ESITO_CQ_ARTICOLO { get; set; }
     public string? SCOSTAMENTO_CQ_ARTICOLO { get; set; }
-    public string? ESITO_CQ_BOX { get; set; }
-    public string? CONFIDENZA_C { get; set; }
+    public string? ABILITA_CQ_COLORE { get; set; }
+    public string? ESITO_CQ_COLORE { get; set; }
+    public string? SCOSTAMENTO_CQ_COLORE { get; set; }
     public string? DT_INS { get; set; }
     public string? DT_AGG { get; set; }
     public string CreatedAt { get; set; }

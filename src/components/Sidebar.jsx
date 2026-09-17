@@ -1,12 +1,13 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, Home, Table, X, ShieldCheck, Monitor, Database, Radio, SlidersHorizontal } from 'lucide-react';
+import { Menu, Home, Table, X, ShieldCheck, Monitor, Database, Radio, SlidersHorizontal, PackageSearch } from 'lucide-react';
 
 const navItems = [
   { to: '/', label: 'Home', icon: Home },
   { to: '/settings', label: 'Impostazioni', icon: Table },
   { to: '/esito-impostazioni', label: 'Soglie Collo Nudo', icon: SlidersHorizontal },
   { to: '/acquisizioni', label: 'Acquisizioni', icon: Database },
+  { to: '/controllo-ordine', label: 'Controllo Ordine', icon: PackageSearch },
   { to: '/controllo-qualita', label: 'Controllo Qualita', icon: ShieldCheck },
   { to: '/dispositivi-multimediali', label: 'Dispositivi Multimediali', icon: Monitor },
   { to: '/realtime-latest', label: 'Monitor Real-time', icon: Radio },

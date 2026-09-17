@@ -9,6 +9,7 @@ import ControlloQualita from './pages/ControlloQualita';
 import DispositiviMultimediali from './pages/DispositiviMultimediali';
 import RealtimeControlloQualita from './pages/RealtimeControlloQualita';
 import Acquisizioni from './pages/Acquisizioni';
+import ControlloOrdine from './pages/ControlloOrdine';
 import RealtimeLatestSingle from './pages/RealtimeLatestSingle';
 import EsitoImpostazioni from './pages/EsitoImpostazioni';
 
@@ -32,6 +33,7 @@ const App = () => (
         <Route path="/settings" element={<TablePage />} />
         <Route path="/esito-impostazioni" element={<EsitoImpostazioni />} />
         <Route path="/acquisizioni" element={<Acquisizioni />} />
+        <Route path="/controllo-ordine" element={<ControlloOrdine />} />
         <Route path="/controllo-qualita" element={<ControlloQualita />} />
         <Route path="/dispositivi-multimediali" element={<DispositiviMultimediali />} />
         <Route path="/realtime-controllo" element={<RealtimeControlloQualita />} />

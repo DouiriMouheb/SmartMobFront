@@ -1,12 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { fetchAcquisizioniStats } from '../services/acquisizioniStatsService';
-
-const formatDateForInput = (date) => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
+import { formatDateForInput } from '../services/dateUtils';
 
 const getDefaultDateRange = () => {
   const today = new Date();

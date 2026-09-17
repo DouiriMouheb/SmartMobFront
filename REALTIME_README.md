@@ -129,11 +129,12 @@ Service class for API communication.
   FOTO_BOX?: string,                   // Box photo path
   CODICE_ARTICOLO?: string,            // Article code
   CODICE_ORDINE?: string,              // Order code
-  ABILITA_CQ?: string,                 // Quality control enabled flag
+  ABILITA_CQ?: string,                 // Quality control enabled flag (articolo)
   ESITO_CQ_ARTICOLO?: string,          // Quality control result for article
   SCOSTAMENTO_CQ_ARTICOLO?: string,    // Quality control deviation for article
-  ESITO_CQ_BOX?: string,               // Quality control result for box
-  CONFIDENZA_C?: string,               // Confidence level
+  ABILITA_CQ_COLORE?: string,          // Quality control enabled flag (colore) - nullable
+  ESITO_CQ_COLORE?: string,            // Quality control result for colour
+  SCOSTAMENTO_CQ_COLORE?: string,      // Quality control deviation for colour
   DT_INS?: string,                     // Insert date
   DT_AGG?: string,                     // Update date
   CreatedAt: string,                   // Creation timestamp
